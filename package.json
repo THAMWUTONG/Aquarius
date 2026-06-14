@@ -1,0 +1,27 @@
+{
+  "name": "aquarius",
+  "version": "1.0.0",
+  "description": "Smart Learning Platform",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npx @tailwindcss/cli -i ./frontend/input.css -o ./frontend/output.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/THAMWUTONG/Aquarius.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/THAMWUTONG/Aquarius/issues"
+  },
+  "homepage": "https://github.com/THAMWUTONG/Aquarius#readme",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.1",
+    "tailwindcss": "^4.3.1"
+  }
+}
