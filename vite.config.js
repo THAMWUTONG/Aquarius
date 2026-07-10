@@ -10,4 +10,13 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss()
   ],
+  server: {
+    proxy: {
+      // Intercepts api calls and forward them to XAMPP.
+      '/api': {
+        target: 'http://localhost:80/backend',
+        changeOrigin: true,
+      }
+    }
+  }
 })
