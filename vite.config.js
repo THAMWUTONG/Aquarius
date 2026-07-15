@@ -11,6 +11,7 @@ export default defineConfig({
     tailwindcss()
   ],
   server: {
+    port: 7777,
     proxy: {
       // Intercepts api calls and forward them to XAMPP.
       '/api': {
