@@ -15,7 +15,7 @@ export default defineConfig({
     proxy: {
       // Intercepts api calls and forward them to XAMPP.
       '/api': {
-        target: 'http://localhost:80/backend',
+        target: 'http://localhost:80/Aquarius/backend',
         changeOrigin: true,
       }
     }
