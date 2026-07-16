@@ -1,14 +1,16 @@
-import { Link } from "react-router"
-import FloatingLines from "../components/lib/FloatingLines"
-import logo from "../assets/placeholder.png"
+import { Link, useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import { login } from "../services/authService.jsx"
+import FloatingLines from "../components/lib/FloatingLines.jsx"
+import logo from "../assets/placeholder.png"
+// import { login } from "../services/authService.jsx"
 
 /**
  * Displays the login page for user authentication,
  * this is the default landing page of the website.
  */
-function LoginPage() {
+function Login() {
+  const navigate = useNavigate();
+
   function validateEmail(email) {
     // Regex breakdown:
     // 1. check if email does not start with one or more whitespace or '@'.
@@ -40,17 +42,19 @@ function LoginPage() {
       return;
     }
     else {
-      try {
-        const loginSuccess = await login(formData.get("email"), formData.get("password"));
+      navigate("/student-dashboard");
+      // try {
+      //   const loginSuccess = await login(formData.get("email"), formData.get("password"));
 
-        if (loginSuccess.success) {
-          // TODO: Set user session Context and redirect to user dashboard.
-        }
-      }
-      catch (error) {
-        alert(error.message);
-      }
-      return;
+      //   if (loginSuccess.success) {
+      //     // TODO: Set user session Context and redirect to user dashboard.
+          
+      //   }
+      // }
+      // catch (error) {
+      //   alert(error.message);
+      // }
+      // return;
     }
   }
 
@@ -95,4 +99,4 @@ function LoginPage() {
   )
 }
 
-export default LoginPage
+export default Login
