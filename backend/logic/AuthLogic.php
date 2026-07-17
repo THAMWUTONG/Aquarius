@@ -16,6 +16,8 @@ function authenticateUser(string $email, string $password): array
         throw new Exception("Incorrect email or password");
     }
 
+    updateLastAccess((int) $user["id"]);
+
     unset($user["password_hash"]);
     return $user;
 }
