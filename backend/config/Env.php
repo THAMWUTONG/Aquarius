@@ -1,19 +1,13 @@
 <?php
 /**
  * Env.php
- * ------------------------------------------------------------
- * 职责：极简 .env 加载器，不依赖第三方 composer 包。
- * 把 .env 里的 KEY=VALUE 读进 PHP 的环境变量，
- * 供 db.php / GeminiService.php 用 env() 取值。
- *
- * .env 文件不要提交到 git，记得在 .gitignore 里加一条 ".env"
- * ------------------------------------------------------------
+ * "Configuration File Reader".
+ * Read (database password, API Key) in .env. 
+ * To use them (database passwords, API keys), simply call env().
+ * 
+ * @param string $path 
  */
 
-/**
- * 加载 .env 文件到 getenv() / $_ENV
- * @param string $path .env 文件路径，默认项目根目录
- */
 function loadEnv(string $path = __DIR__ . '/.env'): void
 {
     static $loaded = false;
@@ -24,7 +18,7 @@ function loadEnv(string $path = __DIR__ . '/.env'): void
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {
         $line = trim($line);
-        // 跳过注释行
+        
         if ($line === '' || str_starts_with($line, '#')) {
             continue;
         }
@@ -32,7 +26,6 @@ function loadEnv(string $path = __DIR__ . '/.env'): void
             continue;
         }
         [$key, $value] = array_map('trim', explode('=', $line, 2)); //explode ->['KEY', 'AIza==='] , array_map() -> ['  DB_HOST ', ' 127.0.0.1  '] to ['DB_HOST', '127.0.0.1']
-        // 去掉可能包裹的引号（/，“）
         $value = trim($value, "\"'");
         putenv("{$key}={$value}");
         $_ENV[$key] = $value;
@@ -42,7 +35,6 @@ function loadEnv(string $path = __DIR__ . '/.env'): void
 }
 
 /**
- * 读取环境变量，带默认值
  * @param string $key
  * @param mixed $default
  * @return mixed
