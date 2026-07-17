@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
+import { useAuth } from "../context/AuthContext.jsx"
 // import { login } from "../services/authService.jsx"
 
 /**
@@ -10,14 +11,15 @@ import logo from "../assets/placeholder.png"
  */
 function Login() {
   const navigate = useNavigate();
+  const { setUser } = useAuth(); 
 
   function validateEmail(email) {
     // Regex breakdown:
-    // 1. check if email does not start with one or more whitespace or '@'.
-    // 2. check if there is a literal '@'.
-    // 3. check if after the literal '@', there is one or more characters that are not whitespace or '@'.
-    // 4. check if there is a literal '.'.
-    // 5. check if after the literal '.', there is one or more characters that are not whitespace or '@'.
+    // 1. check if email does not start with one or more whitespace or "@".
+    // 2. check if there is a literal "@".
+    // 3. check if after the literal "@", there is one or more characters that are not whitespace or "@".
+    // 4. check if there is a literal ".".
+    // 5. check if after the literal ".", there is one or more characters that are not whitespace or "@".
     // 6. check if email ends immediately with no extra characters.
     // If all above conditions are true, then email is valid.
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -42,6 +44,7 @@ function Login() {
       return;
     }
     else {
+      setUser({ email: formData.get("email"), role: "student" }); // placeholder code
       navigate("/student-dashboard");
       // try {
       //   const loginSuccess = await login(formData.get("email"), formData.get("password"));
@@ -91,7 +94,7 @@ function Login() {
               <input className="p-2 rounded-lg ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500" id="password" name="password" type="password" />
               <Link className="text-sm underline" to="/forgot-password">Forgot Password?</Link>
             </div>
-            <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all"type="submit">Sign In <FaSignInAlt/></button>
+            <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all"type="submit">Sign In <FaSignInAlt /></button>
           </form>
         </div>
       </div>
