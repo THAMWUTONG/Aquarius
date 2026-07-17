@@ -3,7 +3,7 @@ import { FaSignInAlt } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
-// import { login } from "../services/authService.jsx"
+import { login } from "../services/authService.jsx"
 
 /**
  * Displays the login page for user authentication,
@@ -44,20 +44,26 @@ function Login() {
       return;
     }
     else {
-      setUser({ email: formData.get("email"), role: "student" }); // placeholder code
-      navigate("/student-dashboard");
-      // try {
-      //   const loginSuccess = await login(formData.get("email"), formData.get("password"));
+      try {
+        const user = await login(formData.get("email"), formData.get("password"));
 
-      //   if (loginSuccess.success) {
-      //     // TODO: Set user session Context and redirect to user dashboard.
-          
-      //   }
-      // }
-      // catch (error) {
-      //   alert(error.message);
-      // }
-      // return;
+        setUser(user);
+        switch (user.role) {
+          case "student":
+            navigate("/student-dashboard");
+            break;
+          case "lecturer":
+            navigate("/lecturer-dashboard");
+            break;
+          case "admin":
+            navigate("/admin-dashboard");
+            break;
+        }
+      }
+      catch (error) {
+        alert(error.message);
+      }
+      return;
     }
   }
 

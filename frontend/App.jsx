@@ -1,4 +1,3 @@
-// import { useState } from "react"
 import { Routes, Route } from "react-router"
 import Login from "./pages/Login.jsx"
 import ForgotPassword from "./pages/ForgotPassword.jsx"
@@ -10,8 +9,6 @@ import StudyCalendar from "./pages/StudyCalendar.jsx"
 import Profile from "./pages/Profile.jsx"
 
 function App() {
-  // const [count, setCount] = useState(0)
-
   return (
     <Routes>
       <Route index element={<Login />} />
