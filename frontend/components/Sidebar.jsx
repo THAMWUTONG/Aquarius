@@ -21,7 +21,7 @@ function Sidebar() {
         </nav>
       )
     }
-    else if (user && user.role === "teacher") {
+    else if (user && user.role === "lecturer") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           
