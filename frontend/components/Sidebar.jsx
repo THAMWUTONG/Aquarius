@@ -1,7 +1,7 @@
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import SidebarNavItems from "./SidebarNavItems.jsx"
-import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
+import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog } from "react-icons/fa"; // Added FaFileAlt, FaCog
 
 function Sidebar() {
   const { user } = useAuth();
@@ -21,10 +21,16 @@ function Sidebar() {
         </nav>
       )
     }
-    else if (user && user.role === "teacher") {
+    else if (user && user.role === "lecturer") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          
+          {/* Added the lecturer portal links requested */}
+          <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/lecturer-dashboard" />
+          <SidebarNavItems displayedText="Manage Quizzes" icon={ <FaGraduationCap /> } href="/take-quizzes" />
+          <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/study-materials" />
+          <SidebarNavItems displayedText="Monitor Performance" icon={ <FaChartLine /> } href="/performance-overview" />
+          <SidebarNavItems displayedText="Profile & Settings" icon={ <FaCog /> } href="/profile" />
+          <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
       )
     }
@@ -33,7 +39,6 @@ function Sidebar() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           
         </nav>
-
       )
     }
   }
@@ -46,8 +51,7 @@ function Sidebar() {
       </div>
       <hr className="text-gray-300"/>
       {renderNavigationItems(user)}
-      
     </div>
   )
 }
-export default Sidebar
+export default Sidebar;
