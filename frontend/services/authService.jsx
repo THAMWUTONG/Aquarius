@@ -7,11 +7,11 @@ export async function login(email, password) {
     body: JSON.stringify({ email, password })
   });
 
-  const loginSuccess = await loginResponse.json();
+  const data = await loginResponse.json();
 
   if (!loginResponse.ok) {
-    throw new Error(loginSuccess.message || 'Login failed');
+    throw new Error(data.message || 'Login failed');
   }
   
-  return loginSuccess;
+  return data;
 }
