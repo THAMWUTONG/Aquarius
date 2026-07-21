@@ -7,7 +7,7 @@
  * 
  */
 
-require_once __DIR__ . '/../Logic/AuthLogic.php';
+require_once __DIR__ . '/../logic/AuthLogic.php';
 
 /**
  * set Content-Type headers
