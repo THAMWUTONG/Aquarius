@@ -29,7 +29,10 @@ function handleLogin(): void
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
         http_response_code(204);
         return;
+<<<<<<< HEAD
         
+=======
+>>>>>>> 1fd76353b711e5ae4bad66fa4ca9bcb5ceb490cd
     }
 
     session_start();
