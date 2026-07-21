@@ -1,0 +1,57 @@
+<?php
+/**
+ * ProfileLogic.php
+ *
+ * 
+ */
+
+require_once __DIR__ . '/../repository/ProfileRepository.php';
+
+/**
+ * @param int $studentId
+ * @return array{
+ *   success: bool,
+ *   enrolledCourses: array,
+ *   partialErrors: array
+ * }
+ */
+function getStProfileData(int $studentId): array
+{
+    $partialErrors = [];
+    //Get Active Enrolled Courses For Profile
+    $coursesResult = getEnlCourses($studentId);
+    if (!$coursesResult['success']) {
+        $partialErrors[] = 'enrolledCourses';
+        $enrolledCourses = [];
+    } else {
+        $enrolledCourses = formatEnrlCourses($coursesResult['data']);
+    }
+
+    if (!empty($partialErrors)) {
+        error_log('[ProfileLogic] partial failure for student ' . $studentId . ': ' . implode(',', $partialErrors));
+    }
+
+    return [
+        'success' => true,
+        'enrolledCourses' => $enrolledCourses,
+        'partialErrors' => $partialErrors,
+    ];
+}
+
+/**
+ * Converts raw enrollment rows into the shape the frontend table expects
+ * (Course Name / Enrolled At)
+ *
+ * @param array $courses
+ * @return array
+ */
+function formatEnrlCourses(array $courses): array
+{
+    return array_map(function (array $course) {
+        return [
+            'id' => (int) $course['id'],
+            'title' => $course['title'],
+            'enrolledAt' => $course['enrolled_at'],
+        ];
+    }, $courses);
+}
