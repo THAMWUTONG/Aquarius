@@ -33,18 +33,16 @@ const shortcutsData = [
 ];
 
 function LecturerDashboard() {
+  const { user } = useAuth();
+
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
-      {/* Renders your modified shared Sidebar */}
+    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
+      {/* Locked Left Sidebar */}
       <Sidebar />
-      
+
+      {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBar />
-        <SidebarNavItems displayedText="Dashboard" />
-        <SidebarNavItems displayedText="Manage Quizzes" />
-        <SidebarNavItems displayedText="Manage Materials" />
-        <SidebarNavItems displayedText="Monitor Performance" />
-        <SidebarNavItems displayedText="Profile & Settings" />
+        <HeaderBar userName="Dr. Sarah Lim" userRole="lecturer" />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-8 max-w-[1600px] w-full mx-auto">
           <div>

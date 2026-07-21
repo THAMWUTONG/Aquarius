@@ -9,6 +9,8 @@ import StudyCalendar from "./pages/StudyCalendar.jsx"
 import Profile from "./pages/Profile.jsx"
 import LecturerDashboard from "./lecturer/Dashboard.jsx"
 import ManageQuizzes from "./lecturer/ManageQuizzes.jsx"
+import ManageMaterials from "./lecturer/ManageMaterials.jsx"
+import MonitorPerformance from "./lecturer/MonitorPerformance.jsx"
 
 function App() {
   return (
@@ -25,6 +27,8 @@ function App() {
       <Route path="/study-calendar" element={<StudyCalendar />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/manage-quizzes" element={<ManageQuizzes />} />
+      <Route path="/manage-materials" element={<ManageMaterials />} />
+      <Route path="/monitor-performance" element={<MonitorPerformance />} />
 
     </Routes>
   )
