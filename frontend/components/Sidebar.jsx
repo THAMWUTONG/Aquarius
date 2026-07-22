@@ -1,6 +1,6 @@
-import logo from "../assets/placeholder.png"
-import { useAuth } from "../context/AuthContext.jsx"
-import SidebarNavItems from "./SidebarNavItems.jsx"
+import logo from "../assets/placeholder.png";
+import { useAuth } from "../context/AuthContext.jsx";
+import SidebarNavItems from "./SidebarNavItems.jsx";
 import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog } from "react-icons/fa";
 
 function Sidebar() {
@@ -25,8 +25,8 @@ function Sidebar() {
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
           <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/lecturer-dashboard" />
           <SidebarNavItems displayedText="Manage Quizzes" icon={ <FaGraduationCap /> } href="/manage-quizzes" />
-          <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/study-materials" />
-          <SidebarNavItems displayedText="Monitor Performance" icon={ <FaChartLine /> } href="/performance-overview" />
+          <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/manage-materials" />
+          <SidebarNavItems displayedText="Monitor Performance" icon={ <FaChartLine /> } href="/monitor-performance" />
           <SidebarNavItems displayedText="Profile & Settings" icon={ <FaCog /> } href="/profile" />
           <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
@@ -46,22 +46,9 @@ function Sidebar() {
         </div>
       </div>
 
-      <hr className="border-gray-200" />
+      <hr className="border-gray-200 mb-2" />
 
-      {/* User Info Card (Dr. Sarah Lim style block) */}
-      {user && (
-        <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-slate-50/50">
-          <div className="w-9 h-9 bg-sky-100 text-sky-600 font-bold rounded-full flex items-center justify-center text-xs shrink-0">
-            {user.name ? user.name.split(' ').map(n => n[0]).join('') : 'DSL'}
-          </div>
-          <div className="overflow-hidden">
-            <h4 className="font-semibold text-xs text-slate-800 truncate">{user.name || "Dr. Sarah Lim"}</h4>
-            <p className="text-[11px] text-slate-400 capitalize">{user.role || "Lecturer"}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Navigation Items placed right below the user info */}
+      {/* Navigation Items directly below the logo section */}
       {renderNavigationItems(user)}
     </aside>
   );

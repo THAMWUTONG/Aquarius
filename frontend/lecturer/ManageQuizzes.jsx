@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
+import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
 import { FaPlus, FaRegComment, FaEdit, FaTrashAlt } from 'react-icons/fa';
 
-// Sample initial state - easy to replace with backend data later
+// Sample initial state fallback
 const initialQuizzes = [
   {
     id: 1,
@@ -65,10 +66,34 @@ const initialQuizzes = [
 
 function ManageQuizzes() {
   const [quizzes, setQuizzes] = useState(initialQuizzes);
+  const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal Open State
+
+  // Fetch updated list from PHP backend
+  const fetchQuizzes = async () => {
+    try {
+      const response = await fetch('http://localhost/api/get_quizzes.php');
+      if (response.ok) {
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setQuizzes(data);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading quizzes:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchQuizzes();
+  }, []);
 
   // Action Handlers
   const handleCreateQuiz = () => {
-    console.log('Open Create Quiz Modal/Page');
+    setIsModalOpen(true); // 3. Open Modal
+  };
+
+  const handleQuizCreated = () => {
+    fetchQuizzes(); // 4. Refresh table after new quiz is saved
   };
 
   const handleCommentClick = (quiz) => {
@@ -81,7 +106,7 @@ function ManageQuizzes() {
 
   const handleDeleteClick = (quizId) => {
     console.log('Delete quiz with ID:', quizId);
-    // setQuizzes(prev => prev.filter(q => q.id !== quizId));
+    setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
   };
 
   return (
@@ -105,7 +130,7 @@ function ManageQuizzes() {
               </p>
             </div>
 
-            <button 
+            <button
               onClick={handleCreateQuiz}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
             >
@@ -203,6 +228,13 @@ function ManageQuizzes() {
           </div>
         </main>
       </div>
+
+      {/* 5. Integrated Pop-up Modal Component */}
+      <CreateQuizModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onQuizCreated={handleQuizCreated}
+      />
     </div>
   );
 }
