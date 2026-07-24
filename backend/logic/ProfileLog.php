@@ -5,7 +5,7 @@
  * 
  */
 
-require_once __DIR__ . '/../repository/ProfileRepository.php';
+require_once __DIR__ . '/../repository/ProfileRep.php';
 
 /**
  * @param int $studentId

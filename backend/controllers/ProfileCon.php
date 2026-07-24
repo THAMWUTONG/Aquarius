@@ -8,7 +8,7 @@
  *   4. try-catch (db err + any err)
  */
 
-require_once __DIR__ . '/../logic/ProfileLogic.php';
+require_once __DIR__ . '/../logic/ProfileLog.php';
 
 function handleProfileRequest(): void
 {
