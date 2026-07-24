@@ -54,20 +54,21 @@ function handleProfileRequest(): void
  */
 function setProfileHeaders(): void
 {
-    $allowedOrigins = [
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'http://localhost:5175',
-        'http://localhost:7777',
-    ];
+    // $allowedOrigins = [
+    //     'http://localhost:5173',
+    //     'http://localhost:5174',
+    //     'http://localhost:5175',
+    //     'http://localhost:7777',
+    // ];
 
-    $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    // $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
 
-    if (in_array($requestOrigin, $allowedOrigins, true)) {
-        header("Access-Control-Allow-Origin: $requestOrigin");
-        header('Access-Control-Allow-Credentials: true');
-    }
+    // if (in_array($requestOrigin, $allowedOrigins, true)) {
+    //     header("Access-Control-Allow-Origin: $requestOrigin");
+    //     header('Access-Control-Allow-Credentials: true');
+    // }
 
+    header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Headers: Content-Type');
     header('Access-Control-Allow-Methods: GET, OPTIONS');
     header('Content-Type: application/json; charset=UTF-8');
