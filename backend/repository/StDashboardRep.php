@@ -9,7 +9,7 @@
  *
  */
 
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/../config/db.php';
 
 /**
  * Fetch enrolled courses for a student

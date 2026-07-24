@@ -3,11 +3,13 @@
 require_once __DIR__ . '/../config/db.php';
 
 /**
- * 拿到某个学生能看到的所有 study materials（course 名字 + topic 名字 +
- * material 本身信息 + 该学生是否已收藏）。
- * 只返回 regulation_status = 'approved' 的资料，未审核通过的不给学生看。
+ * get Course         -> title, id
+ * get Study Material -> id, title, descrip, file path, file type
+ * get Topic          -> title (Topic name)
+ * 
+ * Only show the Study Material that is "Approved"
  *
- * @param int $studentId 当前登录学生的 id，用来判断 bookmark 状态
+ * @param int $studentId current student's ID to check thier bookmarked
  * @return array{success: bool, data?: array, error?: string}
  */
 function getAllMaterialsForStudent(int $studentId): array
