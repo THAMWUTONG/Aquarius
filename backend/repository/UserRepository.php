@@ -10,7 +10,26 @@ function getUserByEmail(string $email): ?array
 {
     $pdo = getDbConnection();
 
-    $stmt = $pdo->prepare("SELECT id, name, email, password_hash, role, created_at FROM users WHERE email = :email");
+    $sql = "SELECT
+                u.id,
+                u.name,
+                u.email,
+                u.password_hash,
+                u.role,
+                u.created_at,
+                s.student_id,
+                s.programme,
+                s.intake,
+                l.lecturer_id,
+                l.department,
+                a.admin_id
+            FROM users u
+            LEFT JOIN students  s ON s.id = u.id AND u.role = 'student'
+            LEFT JOIN lecturers l ON l.id = u.id AND u.role = 'lecturer'
+            LEFT JOIN admins    a ON a.id = u.id AND u.role = 'admin'
+            WHERE u.email = :email";
+
+    $stmt = $pdo->prepare($sql);
     $stmt->bindValue(':email', $email, PDO::PARAM_STR);
     $stmt->execute();
 
