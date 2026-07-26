@@ -2,12 +2,18 @@ import HeaderBar from "../components/HeaderBar.jsx"
 import Sidebar from "../components/Sidebar.jsx"
 import { useAuth } from "../context/AuthContext.jsx"
 import { NavLink, useNavigate } from "react-router"
-import { useEffect } from "react"
-import { FaArrowRight, FaBookOpen, FaCalendar, FaExclamationTriangle, FaFileSignature, FaGraduationCap, FaRegCalendar } from "react-icons/fa";
+import { useEffect, useState } from "react"
+import { FaBookOpen, FaCalendar, FaExclamationTriangle, FaGraduationCap, FaRegCalendar } from "react-icons/fa";
+import DashboardStatisticCard from "../components/DashboardStatisticCard.jsx"
+import { getStudentDashboardData } from "../services/getStudentDashboardData.jsx"
+import StudentDashboardUpcomingEvent from "../components/StudentDashboardUpcomingEvent.jsx"
+import StudentDashboardWeakTopics from "../components/StudentDashboardWeakTopics.jsx"
 
 function StudentDashboard(){
-  const navigate = useNavigate()
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+  const [studentDashboardData, setStudentDashboardData] = useState(null)
 
   useEffect(() => {
     if (!user || user.role !== "student") {
@@ -15,7 +21,24 @@ function StudentDashboard(){
     }
   }, [user, navigate])
   
-  if (!user || user.role !== "student") {
+  useEffect(() => {
+    async function fetchStudentDashboardData() {
+      try {
+        const studentDashboardData = await getStudentDashboardData()
+        setStudentDashboardData(studentDashboardData)
+      }
+      catch (error) {
+        alert(error.message)
+      }
+      finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchStudentDashboardData()
+  }, [user])
+
+  if (!user || user.role !== "student" || loading) {
     return null;
   }
   else {
@@ -40,33 +63,9 @@ function StudentDashboard(){
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              <div className="flex items-center gap-2 p-4 rounded-xl border border-gray-300 shadow-md bg-white">
-                <div className="flex justify-center items-center rounded-lg w-10 h-10 text-sky-500 bg-sky-100">
-                  <FaBookOpen size={18} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Enrolled Courses</p>
-                  <strong className="text-lg font-bold">727</strong>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-4 rounded-xl border border-gray-300 shadow-md bg-white">
-                <div className="flex justify-center items-center rounded-lg w-10 h-10 text-sky-500 bg-sky-100">
-                  <FaGraduationCap size={22} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Quizzes Completed</p>
-                  <strong className="text-lg font-bold">9318054</strong>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-4 rounded-xl border border-gray-300 shadow-md bg-white">
-                <div className="flex justify-center items-center rounded-lg w-10 h-10 text-sky-500 bg-sky-100">
-                  <FaCalendar size={18} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400">Next Event</p>
-                  <strong className="text-lg font-bold">Consultation with Mr.Jarona</strong>
-                </div>
-              </div>
+              <DashboardStatisticCard icon={ <FaBookOpen /> } displayedTitle={ "Enrolled Courses" } displayedData={ studentDashboardData.enrolledCourses.length } />
+              <DashboardStatisticCard icon={ <FaGraduationCap /> } displayedTitle={ "Quizzes Completed" } displayedData={ studentDashboardData.totalQuizzesAttempted } />
+              <DashboardStatisticCard icon={ <FaCalendar /> } displayedTitle={ "Next Event" } displayedData={ studentDashboardData.upcomingEvents.length === 0 ? "None" : studentDashboardData.upcomingEvents[0].title } />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="col-span-2 p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
@@ -76,18 +75,7 @@ function StudentDashboard(){
                 </div>
                 <hr className="text-gray-300"></hr>
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400">
-                    You have achieved less than 70% on average in these topics, we recommend you to focus on these areas.
-                  </p>
-                  <div class="flex justify-between items-center p-4 rounded-lg border border-sky-500 bg-sky-50">
-                    <div>
-                      <h3 className="text-sm font-bold">Title of topic</h3>
-                      <p className="text-xs text-gray-400">Average score of quiz</p>
-                    </div>
-                    <NavLink to="/study-materials" className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500">
-                      Study<FaArrowRight />
-                    </NavLink>
-                  </div>
+                  <StudentDashboardWeakTopics weakTopicsArray={studentDashboardData.weakTopics} />
                 </div>
               </div>
               <div className="p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
@@ -97,14 +85,8 @@ function StudentDashboard(){
                 </div>
                 <hr className="text-gray-300"></hr>
                 <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <FaFileSignature />
-                  <div>
-                    <h3 className="text-sm font-bold">Assignment is due</h3>
-                    <p className="text-xs text-gray-400">2026-07-18 • Assignment</p>
-                  </div>
+                  <StudentDashboardUpcomingEvent eventsArray={studentDashboardData.upcomingEvents} />
                 </div>
-              </div>
               </div>
             </div>
           </div>
