@@ -100,7 +100,7 @@ function Login() {
               <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" id="password" name="password" type="password" />
               <Link className="text-sm underline" to="/forgot-password">Forgot Password?</Link>
             </div>
-            <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all"type="submit">Sign In <FaSignInAlt /></button>
+            <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all" type="submit">Sign In <FaSignInAlt /></button>
           </form>
         </div>
       </div>

@@ -31,10 +31,10 @@ function StudentDashboard(){
                 <p className="text-white">Here's to another day of hardwork and dedication!</p>
               </div>
               <div className="flex gap-2">
-                <NavLink to="/study-materials" className="px-4 py-2 rounded-lg text-sm font-semibold text-sky-500 bg-white">
+                <NavLink to="/study-materials" className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 transition-all">
                   Review Material
                 </NavLink>
-                <NavLink to="/take-quizzes" className="px-4 py-2 rounded-lg text-sm font-semibold text-sky-500 bg-white hover:bg-gray-100 transition-all">
+                <NavLink to="/take-quizzes" className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 transition-all">
                   Take Quizzes
                 </NavLink>
               </div>
@@ -95,6 +95,7 @@ function StudentDashboard(){
                   <FaRegCalendar className="text-sky-500" />
                   <h2 className="font-bold">Upcoming Events</h2>
                 </div>
+                <hr className="text-gray-300"></hr>
                 <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <FaFileSignature />
