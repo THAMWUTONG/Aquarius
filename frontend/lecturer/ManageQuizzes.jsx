@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
@@ -65,6 +66,7 @@ const initialQuizzes = [
 ];
 
 function ManageQuizzes() {
+  const location = useLocation();
   const [quizzes, setQuizzes] = useState(initialQuizzes);
   const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal Open State
 
@@ -84,8 +86,13 @@ function ManageQuizzes() {
   };
 
   useEffect(() => {
-    fetchQuizzes();
-  }, []);
+    if (location.state?.openCreateModal) {
+      setIsModalOpen(true);
+
+    // clear state so refresh does not reopen modal
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   // Action Handlers
   const handleCreateQuiz = () => {

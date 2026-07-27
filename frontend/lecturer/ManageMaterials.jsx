@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import { FaPlus, FaLink, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import UploadMaterialModal from './UploadMaterials.jsx';
 
 const initialMaterials = [
   {
@@ -112,10 +113,16 @@ const initialMaterials = [
 
 function ManageMaterials() {
   const [materials, setMaterials] = useState(initialMaterials);
+  const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal open/close state
 
-  // Handlers for future backend logic
+  // Handlers
   const handleUploadNew = () => {
-    console.log('Upload New Material Clicked');
+    setIsModalOpen(true); // 3. Triggers modal open
+  };
+
+  const handleMaterialUploaded = () => {
+    // Refresh your material list or handle backend reload here
+    console.log('Material saved successfully!');
   };
 
   const handleEditClick = (material) => {
@@ -124,7 +131,7 @@ function ManageMaterials() {
 
   const handleDeleteClick = (materialId) => {
     console.log('Delete Material ID:', materialId);
-    // setMaterials(prev => prev.filter(m => m.id !== materialId));
+    setMaterials((prev) => prev.filter((m) => m.id !== materialId));
   };
 
   return (
@@ -148,7 +155,7 @@ function ManageMaterials() {
               </p>
             </div>
 
-            <button 
+            <button
               onClick={handleUploadNew}
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
             >
@@ -244,6 +251,13 @@ function ManageMaterials() {
           </div>
         </main>
       </div>
+
+      {/* 4. Integrated Pop-up Modal */}
+      <UploadMaterialModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onMaterialUploaded={handleMaterialUploaded}
+      />
     </div>
   );
 }

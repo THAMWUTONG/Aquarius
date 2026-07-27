@@ -27,7 +27,7 @@ function Sidebar() {
           <SidebarNavItems displayedText="Manage Quizzes" icon={ <FaGraduationCap /> } href="/manage-quizzes" />
           <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/manage-materials" />
           <SidebarNavItems displayedText="Monitor Performance" icon={ <FaChartLine /> } href="/monitor-performance" />
-          <SidebarNavItems displayedText="Profile & Settings" icon={ <FaCog /> } href="/profile" />
+          <SidebarNavItems displayedText="Profile & Settings" icon={ <FaCog /> } href="/lecturer-profile" />
           <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
       );

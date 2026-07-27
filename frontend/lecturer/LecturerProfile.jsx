@@ -1,0 +1,274 @@
+import React, { useState } from 'react';
+import Sidebar from '../components/Sidebar.jsx';
+import HeaderBar from '../components/HeaderBar.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { FaUser, FaEnvelope, FaLock, FaSave, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+
+function LecturerProfile() {
+  const { user } = useAuth();
+
+  // Form State initialized with logged-in user or default lecturer data
+  const [profileData, setProfileData] = useState({
+    name: user?.name || 'Dr. Sarah Lim',
+    email: user?.email || 'sarah.lim@aquarius.edu.my',
+    department: 'School of Computing & IT',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProfileData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setFeedback({ type: '', message: '' });
+
+    // Validate password match if attempting to change password
+    if (profileData.newPassword) {
+      if (!profileData.currentPassword) {
+        setFeedback({
+          type: 'error',
+          message: 'Please enter your current password to set a new password.',
+        });
+        return;
+      }
+      if (profileData.newPassword !== profileData.confirmPassword) {
+        setFeedback({
+          type: 'error',
+          message: 'New password and confirmation password do not match.',
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      // Send updated profile data to backend endpoint
+      const response = await fetch('http://localhost/api/update_profile.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileData),
+      });
+
+      if (response.ok) {
+        setFeedback({
+          type: 'success',
+          message: 'Profile details updated successfully!',
+        });
+        // Clear password fields upon successful save
+        setProfileData((prev) => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        }));
+      } else {
+        throw new Error('Failed to update profile.');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      setFeedback({
+        type: 'error',
+        message: 'Something went wrong while saving changes. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
+      {/* Locked Left Sidebar */}
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <HeaderBar userName={profileData.name} userRole="lecturer" />
+
+        <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1200px] w-full mx-auto">
+          {/* Header */}
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Account Settings & Profile
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Update your personal credentials, contact email, and account security.
+            </p>
+          </div>
+
+          {/* Feedback Banner */}
+          {feedback.message && (
+            <div
+              className={`p-4 rounded-xl border text-xs font-medium flex items-center gap-3 transition-all ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-rose-50 border-rose-200 text-rose-700'
+              }`}
+            >
+              {feedback.type === 'success' ? (
+                <FaCheckCircle className="text-base shrink-0" />
+              ) : (
+                <FaExclamationCircle className="text-base shrink-0" />
+              )}
+              <span>{feedback.message}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleProfileSubmit} className="space-y-6">
+            {/* Card 1: Personal Information */}
+            <div className="bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/40">
+                <h3 className="text-sm font-bold text-slate-800 tracking-wide uppercase">
+                  Personal Information
+                </h3>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <FaUser className="absolute left-3.5 top-3.5 text-slate-400 text-xs" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={profileData.name}
+                        onChange={handleChange}
+                        placeholder="e.g., Dr. Sarah Lim"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email Address */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Email Address
+                    </label>
+                    <div className="relative">
+                      <FaEnvelope className="absolute left-3.5 top-3.5 text-slate-400 text-xs" />
+                      <input
+                        type="email"
+                        name="email"
+                        value={profileData.email}
+                        onChange={handleChange}
+                        placeholder="e.g., sarah.lim@aquarius.edu.my"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Faculty / Department (Read-only reference) */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Department / School
+                  </label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={profileData.department}
+                    onChange={handleChange}
+                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Password & Security */}
+            <div className="bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden">
+              <div className="p-6 border-b border-slate-100 bg-slate-50/40">
+                <h3 className="text-sm font-bold text-slate-800 tracking-wide uppercase">
+                  Security & Change Password
+                </h3>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Current Password */}
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <FaLock className="absolute left-3.5 top-3.5 text-slate-400 text-xs" />
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={profileData.currentPassword}
+                      onChange={handleChange}
+                      placeholder="Enter current password to verify"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* New Password & Confirm Password */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      New Password
+                    </label>
+                    <div className="relative">
+                      <FaLock className="absolute left-3.5 top-3.5 text-slate-400 text-xs" />
+                      <input
+                        type="password"
+                        name="newPassword"
+                        value={profileData.newPassword}
+                        onChange={handleChange}
+                        placeholder="Leave blank to keep current password"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                      Confirm New Password
+                    </label>
+                    <div className="relative">
+                      <FaLock className="absolute left-3.5 top-3.5 text-slate-400 text-xs" />
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        value={profileData.confirmPassword}
+                        onChange={handleChange}
+                        placeholder="Re-type new password"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Actions */}
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <FaSave className="text-xs" />
+                <span>{loading ? 'Saving Changes...' : 'Save Profile Changes'}</span>
+              </button>
+            </div>
+          </form>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default LecturerProfile;
