@@ -37,7 +37,7 @@ function getStudentDashboardData(int $studentId): array
         $enrolledCourses = formatEnrolledCourses($coursesResult['data']);
     }
 
-    // tatol Quiz excluded duplicate attempts
+    // total Quiz excluded duplicate attempts
     $quizCountResult = getTotalQuizzesAttempted($studentId);
     if (!$quizCountResult['success']) {
         $partialErrors[] = 'totalQuizzesAttempted';

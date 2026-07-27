@@ -4,10 +4,9 @@ import SidebarNavItems from "./SidebarNavItems.jsx"
 import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
 
 function Sidebar() {
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   function renderNavigationItems(user) {
-    console.log("current role: " + user?.role);
     if (user && user.role === "student") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -21,7 +20,7 @@ function Sidebar() {
         </nav>
       )
     }
-    else if (user && user.role === "teacher") {
+    else if (user && user.role === "lecturer") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           
