@@ -4,7 +4,7 @@ import SidebarNavItems from "./SidebarNavItems.jsx";
 import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog } from "react-icons/fa";
 
 function Sidebar() {
-  const { user } = useAuth();
+  const { user } = useAuth()
 
   function renderNavigationItems(user) {
     if (user && user.role === "student") {

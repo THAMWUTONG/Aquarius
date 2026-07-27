@@ -8,6 +8,10 @@
 require_once __DIR__ . '/../repository/ProfileRep.php';
 
 /**
+ * Gets all profile data that are unique to the student.
+ * Currently the only unique data are active enrolled courses.
+ * If you are looking for non-derived unique data (programme, intake, etc.) refer to AuthLogic.php.
+ * 
  * @param int $studentId
  * @return array{
  *   success: bool,
@@ -18,7 +22,7 @@ require_once __DIR__ . '/../repository/ProfileRep.php';
 function getStProfileData(int $studentId): array
 {
     $partialErrors = [];
-    //Get Active Enrolled Courses For Profile
+    // Get Active Enrolled Courses For Profile
     $coursesResult = getEnlCourses($studentId);
     if (!$coursesResult['success']) {
         $partialErrors[] = 'enrolledCourses';

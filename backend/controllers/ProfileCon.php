@@ -50,7 +50,6 @@ function handleProfileRequest(): void
 /**
  * fetch('/api/profile.php', { credentials: 'include' })
  *
- * // TODO: Before deploying to internet, remove all localhost and replace it with the domain name.
  */
 function setProfileHeaders(): void
 {
