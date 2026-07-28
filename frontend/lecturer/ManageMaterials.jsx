@@ -8,68 +8,61 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 import { deleteMaterial } from '../services/lecturerContentService.jsx';
 
-// Data mapped directly from materials -> topics -> courses DB tables
-const materialsData = [
+// Initial dataset matching database relationships (Materials -> Topics -> Courses)
+const initialMaterials = [
   {
     id: 1,
     title: 'Python Variables Slides',
-    description: 'Lecture slides for variables and data types.',
-    course: 'Introduction to Programming', // course_id: 1
-    topic: 'Variables & Data Types',       // topic_id: 1
+    course: 'Introduction to Programming',
+    topic: 'Variables & Data Types',
     type: 'SLIDES',
     prerequisites: '—',
   },
   {
     id: 2,
     title: 'Control Flow Video',
-    description: 'Video walkthrough of Python control flow.',
-    course: 'Introduction to Programming', // course_id: 1
-    topic: 'If-else, loops, and logical operators', // topic_id: 2
+    course: 'Introduction to Programming',
+    topic: 'If-else, loops, and logical operators',
     type: 'VIDEO',
     prerequisites: '1 topics',
   },
   {
     id: 3,
     title: 'Functions Cheat Sheet',
-    description: 'Quick reference for Python functions.',
-    course: 'Introduction to Programming', // course_id: 1
-    topic: 'Defining reusable functions',   // topic_id: 3
+    course: 'Introduction to Programming',
+    topic: 'Defining reusable functions',
     type: 'PDF',
     prerequisites: '1 topics',
   },
   {
     id: 4,
     title: 'Linked Lists Document',
-    description: 'Comprehensive notes on linked list operations.',
-    course: 'Data Structures & Algorithms', // course_id: 2
-    topic: 'Linear data structures',        // topic_id: 4
+    course: 'Data Structures & Algorithms',
+    topic: 'Linear data structures',
     type: 'DOCUMENT',
     prerequisites: '—',
   },
   {
     id: 5,
     title: 'Sorting Algorithms Video',
-    description: 'Step-by-step visual explanation of sorting algorithms.',
-    course: 'Data Structures & Algorithms', // course_id: 2
-    topic: 'Bubble, merge, quick sort',     // topic_id: 5
+    course: 'Data Structures & Algorithms',
+    topic: 'Bubble, merge, quick sort',
     type: 'VIDEO',
     prerequisites: '1 topics',
   },
   {
     id: 6,
     title: 'ER Diagram Tutorial',
-    description: 'How to draw ER diagrams with examples.',
-    course: 'Database Systems',             // course_id: 3
-    topic: 'ER Modelling',                  // topic_id: 6
+    course: 'Database Systems',
+    topic: 'ER Modelling',
     type: 'PDF',
     prerequisites: '—',
   },
   {
     id: 7,
     title: 'SQL Query Practice Set',
-    description: 'Practice SQL exercises with solutions.',
-    course: 'Database Systems',             // course_id: 3
-    topic: 'SQL Queries',                   // topic_id: 7
+    course: 'Database Systems',
+    topic: 'SQL Queries',
     type: 'PDF',
     prerequisites: '1 topics',
   },
@@ -155,15 +148,15 @@ function ManageMaterials() {
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
-      {/* Locked Left Sidebar */}
+      {/* Sidebar Navigation */}
       <Sidebar />
 
-      {/* Main Content Area */}
+      {/* Main Container */}
       <div className="flex-1 flex flex-col min-w-0">
         <HeaderBar displayedTitle="Manage Materials" userName={user?.name || 'Dr. Sarah Lim'} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1600px] w-full mx-auto">
-          {/* Header & Action Button */}
+          {/* Header Action Section */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -255,17 +248,16 @@ function ManageMaterials() {
                           )}
                         </td>
 
-                        {/* Action Buttons */}
+                        {/* Actions Row */}
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleEditClick(item)}
-                              title="Edit Material"
-                              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors cursor-pointer"
-                            >
-                              <FaEdit className="text-xs" />
-                            </button>
+                            {/* Reusable Edit Material Button */}
+                            <EditMaterialButton
+                              material={item}
+                              onClick={handleEditClick}
+                            />
 
+                            {/* Delete Material Button */}
                             <button
                               onClick={() => handleDeleteClick(item)}
                               title="Delete Material"
@@ -285,11 +277,18 @@ function ManageMaterials() {
         </main>
       </div>
 
-      {/* Integrated Pop-up Modal */}
+      {/* Integrated Upload Modal */}
       <UploadMaterialModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onMaterialUploaded={handleMaterialUploaded}
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+      />
+
+      {/* Integrated Edit Modal */}
+      <EditMaterialModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        material={selectedMaterial}
+        onSave={handleSaveMaterial}
       />
 
       <EditMaterialModal

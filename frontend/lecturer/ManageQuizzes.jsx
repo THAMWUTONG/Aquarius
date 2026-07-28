@@ -3,52 +3,52 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
+import EditQuizButton from '../components/EditQuizButton.jsx';
 import EditQuizModal from './EditQuizModal.jsx';
 import QuizFeedbackModal from './QuizFeedbackModal.jsx';
-import { FaPlus, FaRegComment, FaEdit, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaRegComment, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerQuizzes } from '../services/getLecturerQuizzes.jsx';
 import { deleteQuiz } from '../services/lecturerContentService.jsx';
 
-// Initial state mapped from database table screenshot
 const initialQuizzes = [
   {
     id: 1,
     title: 'Variables Quiz',
-    course: 'Introduction to Programming', // course_id: 1
-    topic: 'Variables & Data Types',       // topic_id: 1
+    course: 'Introduction to Programming',
+    topic: 'Variables & Data Types',
     questions: 5,
     comments: 1,
   },
   {
     id: 2,
     title: 'Control Flow Quiz',
-    course: 'Introduction to Programming', // course_id: 1
-    topic: 'If-else, loops, and logical operators', // topic_id: 2
+    course: 'Introduction to Programming',
+    topic: 'If-else, loops, and logical operators',
     questions: 5,
     comments: 1,
   },
   {
     id: 3,
     title: 'SQL Fundamentals Quiz',
-    course: 'Database Systems',             // course_id: 3
-    topic: 'SQL Queries',                   // topic_id: 7
+    course: 'Database Systems',
+    topic: 'SQL Queries',
     questions: 10,
     comments: 0,
   },
   {
     id: 4,
     title: 'Sorting Algorithms Quiz',
-    course: 'Data Structures & Algorithms', // course_id: 2
-    topic: 'Bubble, merge, quick sort',     // topic_id: 5
+    course: 'Data Structures & Algorithms',
+    topic: 'Bubble, merge, quick sort',
     questions: 5,
     comments: 0,
   },
   {
     id: 5,
     title: 'Probability Basics Quiz',
-    course: 'Statistics for Data Science',  // course_id: 4
-    topic: 'Probability Distributions',     // topic_id: 9
+    course: 'Statistics for Data Science',
+    topic: 'Probability Distributions',
     questions: 8,
     comments: 0,
   },
@@ -104,6 +104,7 @@ function ManageQuizzes() {
     fetchQuizzes();
   };
 
+  // Handlers
   const handleCommentClick = (quiz) => {
     setFeedbackQuiz(quiz);
   };
@@ -136,15 +137,13 @@ function ManageQuizzes() {
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
-      {/* Locked Left Sidebar */}
       <Sidebar />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <HeaderBar displayedTitle="Manage Quizzes" userName={user?.name || 'Dr. Sarah Lim'} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1600px] w-full mx-auto">
-          {/* Header & Create Button */}
+          {/* Header Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -157,7 +156,7 @@ function ManageQuizzes() {
 
             <button
               onClick={handleCreateQuiz}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
             >
               <FaPlus className="text-xs" />
               <span>Create New Quiz</span>
@@ -203,37 +202,23 @@ function ManageQuizzes() {
                       const hasComments = quiz.comments > 0;
                       return (
                         <tr key={quiz.id} className="hover:bg-slate-50/60 transition-colors">
-                          {/* Title */}
-                          <td className="py-4 px-6 font-semibold text-slate-800">
-                            {quiz.title}
-                          </td>
-
-                          {/* Course */}
-                          <td className="py-4 px-6 text-slate-700 font-medium">
-                            {quiz.course}
-                          </td>
-
-                          {/* Topic */}
-                          <td className="py-4 px-6 text-slate-500">
-                            {quiz.topic}
-                          </td>
-
-                          {/* Question Count */}
-                          <td className="py-4 px-6 text-center font-medium text-slate-700">
-                            {quiz.questions}
-                          </td>
+                          <td className="py-4 px-6 font-semibold text-slate-800">{quiz.title}</td>
+                          <td className="py-4 px-6 text-slate-700 font-medium">{quiz.course}</td>
+                          <td className="py-4 px-6 text-slate-500">{quiz.topic}</td>
+                          <td className="py-4 px-6 text-center font-medium text-slate-700">{quiz.questions}</td>
 
                           {/* Action Buttons */}
                           <td className="py-4 px-6">
                             <div className="flex items-center justify-end gap-2">
-                              {/* Comment Button */}
+
+                              {/* Functional Feedback / Comment Button */}
                               <button
                                 onClick={() => handleCommentClick(quiz)}
-                                title={hasComments ? `${quiz.comments} Comment(s)` : 'No comments'}
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md border text-xs font-medium transition-colors cursor-pointer ${
+                                title={hasComments ? `${quiz.comments} Comment(s)` : 'View feedback'}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium transition-colors cursor-pointer ${
                                   hasComments
                                     ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'
-                                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+                                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100 hover:text-slate-600'
                                 }`}
                               >
                                 <FaRegComment className="text-xs" />
@@ -241,13 +226,7 @@ function ManageQuizzes() {
                               </button>
 
                               {/* Edit Button */}
-                              <button
-                                onClick={() => handleEditClick(quiz)}
-                                title="Edit Quiz"
-                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 border border-slate-200 rounded-md transition-colors cursor-pointer"
-                              >
-                                <FaEdit className="text-xs" />
-                              </button>
+                              <EditQuizButton quiz={quiz} onClick={handleEditClick} />
 
                               {/* Delete Button */}
                               <button
@@ -270,7 +249,7 @@ function ManageQuizzes() {
         </main>
       </div>
 
-      {/* Integrated Pop-up Modal Component */}
+      {/* Modals */}
       <CreateQuizModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
