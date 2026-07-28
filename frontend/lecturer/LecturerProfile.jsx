@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { FaUser, FaEnvelope, FaLock, FaSave, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaLock, FaSave, FaCheckCircle, FaExclamationCircle, FaBookOpen } from 'react-icons/fa';
+import { getLecturerProfileData } from '../services/getLecturerProfileData.jsx';
 
 function LecturerProfile() {
   const { user } = useAuth();
 
-  // Form State initialized with logged-in user or default lecturer data
+  // Form State initialized with logged-in user or default lecturer data.
+  // department now comes from the lecturers table via the login payload.
   const [profileData, setProfileData] = useState({
     name: user?.name || 'Dr. Sarah Lim',
     email: user?.email || 'sarah.lim@aquarius.edu.my',
-    department: 'School of Computing & IT',
+    department: user?.department || 'School of Computing & IT',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -19,6 +21,22 @@ function LecturerProfile() {
 
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState({ type: '', message: '' });
+  const [courses, setCourses] = useState([]);
+
+  // Courses taught are DERIVED data, so they come from the API rather than the
+  // login payload - the same split the student profile page uses.
+  useEffect(() => {
+    async function fetchCourses() {
+      try {
+        const data = await getLecturerProfileData();
+        setCourses(data.courses);
+      } catch (error) {
+        console.error('Error loading courses taught:', error);
+      }
+    }
+
+    fetchCourses();
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -90,7 +108,7 @@ function LecturerProfile() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBar userName={profileData.name} userRole="lecturer" />
+        <HeaderBar displayedTitle="Lecturer Profile" userName={profileData.name} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1200px] w-full mx-auto">
           {/* Header */}
@@ -265,6 +283,46 @@ function LecturerProfile() {
               </button>
             </div>
           </form>
+
+          {/* Courses Taught (read-only, loaded from the database) */}
+          <div className="bg-white border border-slate-200/80 rounded-xl shadow-xs overflow-hidden">
+            <div className="p-6 border-b border-slate-100 bg-slate-50/40">
+              <h3 className="text-sm font-bold text-slate-800 tracking-wide uppercase">
+                Courses You Teach
+              </h3>
+            </div>
+
+            <div className="p-6">
+              {courses.length === 0 ? (
+                <p className="text-xs text-slate-400">
+                  No courses are assigned to your account yet.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {courses.map((course) => (
+                    <div
+                      key={course.id}
+                      className="p-4 border border-slate-100 rounded-lg bg-slate-50/60"
+                    >
+                      <div className="flex items-start gap-3">
+                        <FaBookOpen className="text-sky-500 text-sm mt-0.5 shrink-0" />
+                        <div className="min-w-0">
+                          <h4 className="text-sm font-semibold text-slate-800">
+                            {course.title}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {course.studentCount} student{course.studentCount === 1 ? '' : 's'}
+                            {' · '}
+                            {course.topicCount} topic{course.topicCount === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </main>
       </div>
     </div>

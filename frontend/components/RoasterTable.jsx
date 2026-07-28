@@ -24,6 +24,13 @@ export default function RosterTable({ students }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 text-slate-700">
+            {students.length === 0 && (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-slate-400">
+                  No students are enrolled in your courses yet.
+                </td>
+              </tr>
+            )}
             {students.map((student, idx) => (
               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                 <td className="py-3.5 pr-4">
@@ -39,7 +46,7 @@ export default function RosterTable({ students }) {
                     <span className="font-bold text-slate-700 min-w-[28px] text-right">{student.progress}%</span>
                   </div>
                 </td>
-                <td className="py-3.5 text-right font-medium text-slate-400">{student.lastActive}</td>
+                <td className="py-3.5 text-right font-medium text-slate-400">{student.lastActive ?? 'Never'}</td>
               </tr>
             ))}
           </tbody>

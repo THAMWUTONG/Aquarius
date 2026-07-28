@@ -3,7 +3,9 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
-import { FaPlus, FaRegComment, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaPlus, FaRegComment, FaEdit, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext.jsx';
+import { getLecturerQuizzes } from '../services/getLecturerQuizzes.jsx';
 
 // Sample initial state fallback
 const initialQuizzes = [
@@ -67,23 +69,32 @@ const initialQuizzes = [
 
 function ManageQuizzes() {
   const location = useLocation();
+  const { user } = useAuth();
   const [quizzes, setQuizzes] = useState(initialQuizzes);
+  const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal Open State
 
   // Fetch updated list from PHP backend
   const fetchQuizzes = async () => {
     try {
-      const response = await fetch('http://localhost/api/get_quizzes.php');
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setQuizzes(data);
-        }
-      }
+      const data = await getLecturerQuizzes();
+      setQuizzes(data.quizzes);
+      setIsFallback(false);
     } catch (error) {
+      // Keep initialQuizzes on screen, but flag it as sample data.
       console.error('Error loading quizzes:', error);
+      setIsFallback(true);
     }
   };
+
+  // Load the lecturer's real quizzes as soon as the page opens.
+  useEffect(() => {
+    async function loadQuizzes() {
+      await fetchQuizzes();
+    }
+
+    loadQuizzes();
+  }, [user]);
 
   useEffect(() => {
     if (location.state?.openCreateModal) {
@@ -123,7 +134,7 @@ function ManageQuizzes() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBar userName="Dr. Sarah Lim" userRole="lecturer" />
+        <HeaderBar displayedTitle="Manage Quizzes" userName={user?.name || 'Dr. Sarah Lim'} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1600px] w-full mx-auto">
           {/* Header & Create Button */}
@@ -145,6 +156,14 @@ function ManageQuizzes() {
               <span>Create New Quiz</span>
             </button>
           </div>
+
+          {/* Sample-data warning: only visible when the API could not be reached */}
+          {isFallback && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium">
+              <FaExclamationTriangle className="text-base shrink-0" />
+              <span>Showing built-in sample data - could not reach the server. These rows are not from the database.</span>
+            </div>
+          )}
 
           {/* Quizzes Table */}
           <div className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">

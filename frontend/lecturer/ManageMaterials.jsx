@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaLink, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaPlus, FaLink, FaEdit, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
 import UploadMaterialModal from './UploadMaterials.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 
 const initialMaterials = [
   {
@@ -112,8 +114,44 @@ const initialMaterials = [
 ];
 
 function ManageMaterials() {
+  const { user } = useAuth();
   const [materials, setMaterials] = useState(initialMaterials);
+  const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal open/close state
+
+  // Fetch the lecturer's real materials from the PHP backend.
+  // The API field names are mapped onto the shape this table already expects,
+  // so none of the JSX below has to change:
+  //   fileType (lowercase)  -> type       (the badge CSS uppercases it)
+  //   prerequisites (number) -> '2 topics' | null
+  const fetchMaterials = async () => {
+    try {
+      const data = await getLecturerMaterials();
+      setMaterials(
+        data.materials.map((item) => ({
+          id: item.id,
+          title: item.title,
+          course: item.course,
+          topic: item.topic,
+          type: item.fileType,
+          prerequisites: item.prerequisites > 0 ? `${item.prerequisites} topics` : null,
+        }))
+      );
+      setIsFallback(false);
+    } catch (error) {
+      // Keep initialMaterials on screen, but flag it as sample data.
+      console.error('Error loading materials:', error);
+      setIsFallback(true);
+    }
+  };
+
+  useEffect(() => {
+    async function loadMaterials() {
+      await fetchMaterials();
+    }
+
+    loadMaterials();
+  }, [user]);
 
   // Handlers
   const handleUploadNew = () => {
@@ -121,8 +159,8 @@ function ManageMaterials() {
   };
 
   const handleMaterialUploaded = () => {
-    // Refresh your material list or handle backend reload here
-    console.log('Material saved successfully!');
+    // Refresh the table so a newly uploaded material appears immediately.
+    fetchMaterials();
   };
 
   const handleEditClick = (material) => {
@@ -141,7 +179,7 @@ function ManageMaterials() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBar userName="Dr. Sarah Lim" userRole="lecturer" />
+        <HeaderBar displayedTitle="Manage Materials" userName={user?.name || 'Dr. Sarah Lim'} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6 max-w-[1600px] w-full mx-auto">
           {/* Header & Action Button */}
@@ -163,6 +201,14 @@ function ManageMaterials() {
               <span>Upload New Material</span>
             </button>
           </div>
+
+          {/* Sample-data warning: only visible when the API could not be reached */}
+          {isFallback && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium">
+              <FaExclamationTriangle className="text-base shrink-0" />
+              <span>Showing built-in sample data - could not reach the server. These rows are not from the database.</span>
+            </div>
+          )}
 
           {/* Materials Table Card */}
           <div className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">

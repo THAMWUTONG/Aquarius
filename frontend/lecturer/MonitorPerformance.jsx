@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
+import { FaExclamationTriangle } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext.jsx';
+import { getLecturerPerformanceData } from '../services/getLecturerPerformanceData.jsx';
 
 // Sample chart data - easy to connect to dynamic backend calculations later
 const scoreAveragesData = [
@@ -64,9 +67,58 @@ const initialGradebook = [
 ];
 
 function MonitorPerformance() {
+  const { user } = useAuth();
   const [gradebook, setGradebook] = useState(initialGradebook);
+  const [scoreAverages, setScoreAverages] = useState(scoreAveragesData);
+  const [completionRates, setCompletionRates] = useState(completionRatesData);
+  const [isFallback, setIsFallback] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState('Introduction to Web Development');
   const [selectedQuiz, setSelectedQuiz] = useState('HTML5 Semantic Elements Quiz');
+
+  // Pull the three analytics datasets from one endpoint.
+  // API values are mapped onto the shapes the charts and table already use,
+  // so no JSX below needs to change. bestScore stays a dash when a student has
+  // never attempted a quiz - showing '0%' would wrongly imply they sat and failed.
+  useEffect(() => {
+    async function fetchPerformanceData() {
+      try {
+        const data = await getLecturerPerformanceData();
+
+        setScoreAverages(
+          data.courseAverages.map((item) => ({
+            course: item.course,
+            average: item.average,
+          }))
+        );
+
+        setCompletionRates(
+          data.topicCompletion.map((item) => ({
+            topic: item.topic,
+            rate: item.rate,
+          }))
+        );
+
+        setGradebook(
+          data.gradebook.map((student) => ({
+            id: student.studentId,
+            name: student.name,
+            email: student.email,
+            status: student.status,
+            attempts: student.attempts,
+            bestScore: student.bestScore === null ? '—' : `${student.bestScore}%`,
+          }))
+        );
+
+        setIsFallback(false);
+      } catch (error) {
+        // Keep the sample charts and gradebook on screen, but flag them.
+        console.error('Error loading performance analytics:', error);
+        setIsFallback(true);
+      }
+    }
+
+    fetchPerformanceData();
+  }, [user]);
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
@@ -75,7 +127,7 @@ function MonitorPerformance() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <HeaderBar userName="Dr. Sarah Lim" userRole="lecturer" />
+        <HeaderBar displayedTitle="Monitor Performance" userName={user?.name || 'Dr. Sarah Lim'} userRole={user?.role || 'lecturer'} />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-8 max-w-[1600px] w-full mx-auto">
           {/* Header */}
@@ -87,6 +139,14 @@ function MonitorPerformance() {
               Monitor classroom score averages and quiz completion statistics.
             </p>
           </div>
+
+          {/* Sample-data warning: only visible when the API could not be reached */}
+          {isFallback && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium">
+              <FaExclamationTriangle className="text-base shrink-0" />
+              <span>Showing built-in sample data - could not reach the server. These figures are not from the database.</span>
+            </div>
+          )}
 
           {/* Top Analytics Cards Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -105,7 +165,7 @@ function MonitorPerformance() {
                 <div className="absolute inset-x-0 top-3/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 25</div>
 
                 {/* Bars */}
-                {scoreAveragesData.map((item) => (
+                {scoreAverages.map((item) => (
                   <div key={item.course} className="flex flex-col items-center flex-1 z-10 h-full justify-end">
                     <div
                       style={{ height: `${item.average}%` }}
@@ -133,7 +193,7 @@ function MonitorPerformance() {
                 <div className="absolute inset-x-0 top-3/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 25</div>
 
                 {/* Bars */}
-                {completionRatesData.map((item) => (
+                {completionRates.map((item) => (
                   <div key={item.topic} className="flex flex-col items-center flex-1 z-10 h-full justify-end">
                     <div
                       style={{ height: `${item.rate}%` }}
