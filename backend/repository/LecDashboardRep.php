@@ -35,6 +35,8 @@ function getLecturerRoster(int $lecturerUserId): array
                 s.id AS student_id,
                 u.name,
                 u.email,
+                s.programme,
+                s.intake,
                 GROUP_CONCAT(DISTINCT c.title ORDER BY c.title SEPARATOR ', ') AS classes,
                 u.last_access,
                 (
@@ -58,7 +60,7 @@ function getLecturerRoster(int $lecturerUserId): array
             JOIN students s   ON s.id = e.student_id
             JOIN users u      ON u.id = s.id
             WHERE l.id = :lecturerId
-            GROUP BY s.id, u.name, u.email, u.last_access
+            GROUP BY s.id, u.name, u.email, s.programme, s.intake, u.last_access
             ORDER BY u.name ASC";
 
     try {

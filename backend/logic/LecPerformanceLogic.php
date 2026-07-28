@@ -18,9 +18,32 @@ require_once __DIR__ . '/../repository/LecPerformanceRep.php';
  *   partialErrors: array
  * }
  */
-function getLecturerPerformanceData(int $lecturerUserId): array
+function getLecturerPerformanceData(int $lecturerUserId, ?int $courseId = null, ?int $quizId = null): array
 {
     $partialErrors = [];
+
+    // Filter dropdown options. These describe everything the lecturer owns and
+    // are intentionally NOT narrowed by the current selection - otherwise
+    // picking a course would remove every other course from the dropdown and
+    // strand the user with no way back.
+    $filterResult = getLecturerFilterOptions($lecturerUserId);
+    if (!$filterResult['success']) {
+        $partialErrors[] = 'filters';
+        $filters = ['courses' => [], 'quizzes' => []];
+    } else {
+        $filters = [
+            'courses' => array_map(function (array $row) {
+                return ['id' => (int) $row['id'], 'title' => $row['title']];
+            }, $filterResult['courses']),
+            'quizzes' => array_map(function (array $row) {
+                return [
+                    'id' => (int) $row['id'],
+                    'title' => $row['title'],
+                    'courseId' => (int) $row['course_id'],
+                ];
+            }, $filterResult['quizzes']),
+        ];
+    }
 
     // Average quiz score per course
     $averagesResult = getLecturerCourseAverages($lecturerUserId);
@@ -40,8 +63,8 @@ function getLecturerPerformanceData(int $lecturerUserId): array
         $topicCompletion = formatTopicCompletion($completionResult['data']);
     }
 
-    // Per-student gradebook
-    $gradebookResult = getLecturerGradebook($lecturerUserId);
+    // Per-student gradebook, narrowed by the selected course/quiz if any
+    $gradebookResult = getLecturerGradebook($lecturerUserId, $courseId, $quizId);
     if (!$gradebookResult['success']) {
         $partialErrors[] = 'gradebook';
         $gradebook = [];
@@ -58,6 +81,8 @@ function getLecturerPerformanceData(int $lecturerUserId): array
         'courseAverages' => $courseAverages,
         'topicCompletion' => $topicCompletion,
         'gradebook' => $gradebook,
+        'filters' => $filters,
+        'selected' => ['courseId' => $courseId, 'quizId' => $quizId],
         'partialErrors' => $partialErrors,
     ];
 }

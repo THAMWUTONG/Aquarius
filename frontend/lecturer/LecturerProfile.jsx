@@ -4,6 +4,7 @@ import HeaderBar from '../components/HeaderBar.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { FaUser, FaEnvelope, FaLock, FaSave, FaCheckCircle, FaExclamationCircle, FaBookOpen } from 'react-icons/fa';
 import { getLecturerProfileData } from '../services/getLecturerProfileData.jsx';
+import { updateLecturerProfile } from '../services/lecturerContentService.jsx';
 
 function LecturerProfile() {
   const { user } = useAuth();
@@ -68,34 +69,28 @@ function LecturerProfile() {
     setLoading(true);
 
     try {
-      // Send updated profile data to backend endpoint
-      const response = await fetch('http://localhost/api/update_profile.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileData),
+      // Only the password fields are sent: name, email and department are
+      // rendered read-only, and the endpoint ignores them anyway.
+      const result = await updateLecturerProfile({
+        currentPassword: profileData.currentPassword,
+        newPassword: profileData.newPassword,
+        confirmPassword: profileData.confirmPassword,
       });
 
-      if (response.ok) {
-        setFeedback({
-          type: 'success',
-          message: 'Profile details updated successfully!',
-        });
-        // Clear password fields upon successful save
-        setProfileData((prev) => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        }));
-      } else {
-        throw new Error('Failed to update profile.');
-      }
+      setFeedback({ type: 'success', message: result.message });
+
+      // Clear password fields upon successful save
+      setProfileData((prev) => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
     } catch (error) {
       console.error('Profile update error:', error);
-      setFeedback({
-        type: 'error',
-        message: 'Something went wrong while saving changes. Please try again.',
-      });
+      // Surface the server's reason ('Your current password is incorrect')
+      // rather than a generic message that gives the user nothing to act on.
+      setFeedback({ type: 'error', message: error.message });
     } finally {
       setLoading(false);
     }

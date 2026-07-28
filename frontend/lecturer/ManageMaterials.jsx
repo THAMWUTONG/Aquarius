@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaLink, FaEdit, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlus, FaLink, FaEdit, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import UploadMaterialModal from './UploadMaterials.jsx';
+import EditMaterialModal from './EditMaterialModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
+import { deleteMaterial } from '../services/lecturerContentService.jsx';
 
 // Data mapped directly from materials -> topics -> courses DB tables
 const materialsData = [
@@ -74,8 +76,12 @@ const materialsData = [
 ];
 
 function ManageMaterials() {
+  const { user } = useAuth();
   const [materials, setMaterials] = useState(materialsData);
+  const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   // Fetch the lecturer's real materials from the PHP backend.
   // The API field names are mapped onto the shape this table already expects,
@@ -89,6 +95,9 @@ function ManageMaterials() {
         data.materials.map((item) => ({
           id: item.id,
           title: item.title,
+          // Carried through so the edit modal can prefill it, even though the
+          // table itself does not show a description column.
+          description: item.description,
           course: item.course,
           topic: item.topic,
           type: item.fileType,
@@ -122,12 +131,26 @@ function ManageMaterials() {
   };
 
   const handleEditClick = (material) => {
-    console.log('Edit Material:', material);
+    setEditingMaterial(material);
   };
 
-  const handleDeleteClick = (materialId) => {
-    console.log('Delete Material ID:', materialId);
-    setMaterials((prev) => prev.filter((m) => m.id !== materialId));
+  const handleDeleteClick = async (material) => {
+    const confirmed = window.confirm(
+      `Delete "${material.title}"? The uploaded file is removed too. This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setActionError('');
+
+    try {
+      await deleteMaterial(material.id);
+      // Refetch instead of filtering local state, so the table always reflects
+      // what the database actually holds.
+      await fetchMaterials();
+    } catch (error) {
+      console.error('Error deleting material:', error);
+      setActionError(error.message);
+    }
   };
 
   return (
@@ -165,6 +188,14 @@ function ManageMaterials() {
             <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium">
               <FaExclamationTriangle className="text-base shrink-0" />
               <span>Showing built-in sample data - could not reach the server. These rows are not from the database.</span>
+            </div>
+          )}
+
+          {/* Failed delete/update, shown instead of silently doing nothing */}
+          {actionError && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium">
+              <FaExclamationCircle className="text-base shrink-0" />
+              <span>{actionError}</span>
             </div>
           )}
 
@@ -236,7 +267,7 @@ function ManageMaterials() {
                             </button>
 
                             <button
-                              onClick={() => handleDeleteClick(item.id)}
+                              onClick={() => handleDeleteClick(item)}
                               title="Delete Material"
                               className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-md transition-colors cursor-pointer"
                             >
@@ -259,6 +290,12 @@ function ManageMaterials() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onMaterialUploaded={handleMaterialUploaded}
+      />
+
+      <EditMaterialModal
+        material={editingMaterial}
+        onClose={() => setEditingMaterial(null)}
+        onMaterialUpdated={fetchMaterials}
       />
     </div>
   );

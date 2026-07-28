@@ -81,6 +81,10 @@ function formatLecturerStats(array $stats): array
  *   - last_access is trimmed to its DATE part only, or null when the student
  *     has never logged in. Rendering that null as text is the frontend's job.
  *
+ * programme and intake come straight off the students row. programme is
+ * nullable in the schema and intake is a DATE, so both are normalised to a
+ * plain string or null and the table renders the dash.
+ *
  * @param array $rows
  * @return array
  */
@@ -91,6 +95,10 @@ function formatLecturerRoster(array $rows): array
             'studentId' => (int) $row['student_id'],
             'name' => $row['name'],
             'email' => $row['email'],
+            'programme' => $row['programme'] ?? null,
+            'intake' => !empty($row['intake'])
+                ? substr($row['intake'], 0, 10)
+                : null,
             'classes' => $row['classes'] ?? '',
             'progress' => (int) round((float) ($row['avg_progress'] ?? 0)),
             'lastActive' => !empty($row['last_access'])

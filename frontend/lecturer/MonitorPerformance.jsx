@@ -72,17 +72,30 @@ function MonitorPerformance() {
   const [scoreAverages, setScoreAverages] = useState(scoreAveragesData);
   const [completionRates, setCompletionRates] = useState(completionRatesData);
   const [isFallback, setIsFallback] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState('Introduction to Web Development');
-  const [selectedQuiz, setSelectedQuiz] = useState('HTML5 Semantic Elements Quiz');
+
+  // Filter options come from the API; '' means "no filter" for both.
+  const [filterOptions, setFilterOptions] = useState({ courses: [], quizzes: [] });
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedQuiz, setSelectedQuiz] = useState('');
 
   // Pull the three analytics datasets from one endpoint.
   // API values are mapped onto the shapes the charts and table already use,
   // so no JSX below needs to change. bestScore stays a dash when a student has
   // never attempted a quiz - showing '0%' would wrongly imply they sat and failed.
+  // Refetches whenever a filter changes: the gradebook is narrowed server-side
+  // so the attempt counts and best scores stay correct for the selection,
+  // which client-side filtering of already-aggregated rows could not do.
   useEffect(() => {
     async function fetchPerformanceData() {
       try {
-        const data = await getLecturerPerformanceData();
+        const data = await getLecturerPerformanceData({
+          courseId: selectedCourse,
+          quizId: selectedQuiz,
+        });
+
+        if (data.filters) {
+          setFilterOptions(data.filters);
+        }
 
         setScoreAverages(
           data.courseAverages.map((item) => ({
@@ -118,7 +131,7 @@ function MonitorPerformance() {
     }
 
     fetchPerformanceData();
-  }, [user]);
+  }, [user, selectedCourse, selectedQuiz]);
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
@@ -226,12 +239,21 @@ function MonitorPerformance() {
               <div className="flex flex-wrap items-center gap-3">
                 <select
                   value={selectedCourse}
-                  onChange={(e) => setSelectedCourse(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCourse(e.target.value);
+                    // The chosen quiz may belong to a different course, which
+                    // would combine into a filter matching nothing. Clearing it
+                    // keeps the two dropdowns consistent.
+                    setSelectedQuiz('');
+                  }}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-sky-500 transition-colors cursor-pointer"
                 >
-                  <option value="Introduction to Web Development">Introduction to Web Development</option>
-                  <option value="Database Systems">Database Systems</option>
-                  <option value="Calculus I">Calculus I</option>
+                  <option value="">All courses</option>
+                  {filterOptions.courses.map((course) => (
+                    <option key={course.id} value={course.id}>
+                      {course.title}
+                    </option>
+                  ))}
                 </select>
 
                 <select
@@ -239,8 +261,14 @@ function MonitorPerformance() {
                   onChange={(e) => setSelectedQuiz(e.target.value)}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-700 outline-none focus:border-sky-500 transition-colors cursor-pointer"
                 >
-                  <option value="HTML5 Semantic Elements Quiz">HTML5 Semantic Elements Quiz</option>
-                  <option value="Flexbox & CSS Grid Mastery">Flexbox & CSS Grid Mastery</option>
+                  <option value="">All quizzes</option>
+                  {filterOptions.quizzes
+                    .filter((quiz) => !selectedCourse || String(quiz.courseId) === String(selectedCourse))
+                    .map((quiz) => (
+                      <option key={quiz.id} value={quiz.id}>
+                        {quiz.title}
+                      </option>
+                    ))}
                 </select>
               </div>
             </div>
@@ -257,6 +285,13 @@ function MonitorPerformance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
+                  {gradebook.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="py-8 text-center text-slate-400 text-xs">
+                        No enrolled students match this selection.
+                      </td>
+                    </tr>
+                  )}
                   {gradebook.map((student) => {
                     const isPassed = student.status === 'Passed';
                     return (

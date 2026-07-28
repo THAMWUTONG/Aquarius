@@ -22,7 +22,7 @@ function setLecApiHeaders(): void
 {
     header('Access-Control-Allow-Origin: *');
     header('Access-Control-Allow-Headers: Content-Type');
-    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
     header('Content-Type: application/json; charset=UTF-8');
 }
 
@@ -82,4 +82,43 @@ function requireLecturerSession(): ?int
     }
 
     return (int) $_SESSION['user_id'];
+}
+
+/**
+ * The HTTP verb of the current request, upper-cased.
+ */
+function lecRequestMethod(): string
+{
+    return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+}
+
+/**
+ * Decodes a JSON request body into an array.
+ *
+ * Returns [] for an empty or malformed body rather than throwing: callers
+ * validate the individual fields they need anyway, and a missing field message
+ * is far more useful to the user than 'invalid JSON'.
+ *
+ * @return array
+ */
+function lecJsonBody(): array
+{
+    $raw = file_get_contents('php://input');
+    if ($raw === false || trim($raw) === '') {
+        return [];
+    }
+
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : [];
+}
+
+/**
+ * Sends 405 with the verbs this endpoint actually accepts.
+ *
+ * @param string[] $allowed
+ */
+function sendLecMethodNotAllowed(array $allowed): void
+{
+    header('Allow: ' . implode(', ', $allowed));
+    sendLecApiError('Method not allowed on this endpoint.', 405);
 }

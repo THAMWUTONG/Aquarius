@@ -119,9 +119,17 @@ function getLecturerTopicCompletion(int $lecturerUserId): array
  * @param int $lecturerUserId
  * @return array{success: bool, data?: array, error?: string}
  */
-function getLecturerGradebook(int $lecturerUserId): array
+function getLecturerGradebook(int $lecturerUserId, ?int $courseId = null, ?int $quizId = null): array
 {
     $pdo = getDbConnection();
+
+    // The course filter restricts WHICH STUDENTS appear (only those enrolled in
+    // it), so it belongs in WHERE. The quiz filter restricts WHICH ATTEMPTS
+    // count, so it goes in the quizzes ON clause instead - putting it in WHERE
+    // would drop every student who has not sat that specific quiz, which is
+    // precisely the "No Attempt" row the gradebook exists to show.
+    $courseCondition = $courseId !== null ? ' AND c.id = :courseId' : '';
+    $quizCondition = $quizId !== null ? ' AND q.id = :quizId' : '';
 
     $sql = "SELECT
                 s.id AS student_id,
@@ -135,25 +143,81 @@ function getLecturerGradebook(int $lecturerUserId): array
             JOIN students s   ON s.id = e.student_id
             JOIN users u      ON u.id = s.id
             LEFT JOIN topics t  ON t.course_id = c.id
-            LEFT JOIN quizzes q ON q.topic_id = t.id
+            LEFT JOIN quizzes q ON q.topic_id = t.id{$quizCondition}
             LEFT JOIN quiz_attempts qa ON qa.quiz_id = q.id AND qa.student_id = s.id
             LEFT JOIN (
                 SELECT quiz_id, SUM(score) AS max_score
                 FROM quiz_questions
                 GROUP BY quiz_id
             ) qmax ON qmax.quiz_id = q.id AND qmax.max_score > 0
-            WHERE l.id = :lecturerId
+            WHERE l.id = :lecturerId{$courseCondition}
             GROUP BY s.id, u.name, u.email
             ORDER BY u.name ASC";
 
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        if ($courseId !== null) {
+            $stmt->bindValue(':courseId', $courseId, PDO::PARAM_INT);
+        }
+        if ($quizId !== null) {
+            $stmt->bindValue(':quizId', $quizId, PDO::PARAM_INT);
+        }
         $stmt->execute();
 
         return ['success' => true, 'data' => $stmt->fetchAll()];
     } catch (PDOException $e) {
         error_log('[LecPerformanceRepository] getLecturerGradebook failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Courses and quizzes this lecturer owns, for the gradebook filter dropdowns.
+ *
+ * The dropdowns previously listed hard-coded titles ('Calculus I', 'HTML5
+ * Semantic Elements Quiz') that exist in no database, so selecting one could
+ * never match a row.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, courses?: array, quizzes?: array, error?: string}
+ */
+function getLecturerFilterOptions(int $lecturerUserId): array
+{
+    $pdo = getDbConnection();
+
+    $courseSql = "SELECT c.id, c.title
+                  FROM lecturers l
+                  JOIN courses c ON c.lecturer_id = l.lecturer_id
+                  WHERE l.id = :lecturerId
+                  ORDER BY c.title ASC";
+
+    // course_id travels with each quiz so the frontend can narrow the quiz list
+    // when a course is picked, without a second round trip.
+    $quizSql = "SELECT q.id, q.title, c.id AS course_id
+                FROM lecturers l
+                JOIN courses c ON c.lecturer_id = l.lecturer_id
+                JOIN topics t  ON t.course_id = c.id
+                JOIN quizzes q ON q.topic_id = t.id
+                WHERE l.id = :lecturerId
+                ORDER BY c.title ASC, q.title ASC";
+
+    try {
+        $courseStmt = $pdo->prepare($courseSql);
+        $courseStmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $courseStmt->execute();
+
+        $quizStmt = $pdo->prepare($quizSql);
+        $quizStmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $quizStmt->execute();
+
+        return [
+            'success' => true,
+            'courses' => $courseStmt->fetchAll(),
+            'quizzes' => $quizStmt->fetchAll(),
+        ];
+    } catch (PDOException $e) {
+        error_log('[LecPerformanceRepository] getLecturerFilterOptions failed: ' . $e->getMessage());
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
     }
 }

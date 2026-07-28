@@ -52,3 +52,48 @@ function getLecturerCourses(int $lecturerUserId): array
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
     }
 }
+
+/**
+ * The stored bcrypt hash for one user, used to verify their current password.
+ *
+ * @param int $userId
+ * @return string|null null when the user row is gone
+ */
+function getUserPasswordHash(int $userId): ?string
+{
+    $pdo = getDbConnection();
+
+    $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = :userId");
+    $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $hash = $stmt->fetchColumn();
+    return $hash === false ? null : (string) $hash;
+}
+
+/**
+ * Writes a new password hash.
+ *
+ * Takes an already-hashed value: hashing belongs in the logic layer so this
+ * function cannot be called with a plaintext password by mistake.
+ *
+ * @param int    $userId
+ * @param string $passwordHash output of password_hash()
+ * @return array{success: bool, error?: string}
+ */
+function updateUserPassword(int $userId, string $passwordHash): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET password_hash = :hash WHERE id = :userId");
+        $stmt->bindValue(':hash', $passwordHash, PDO::PARAM_STR);
+        $stmt->bindValue(':userId', $userId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        error_log('[LecProfileRepository] updateUserPassword failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}

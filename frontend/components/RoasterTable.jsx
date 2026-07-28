@@ -26,7 +26,6 @@ function RosterTable({ students = [] }) {
                 <td colSpan="3" className="py-6 text-center text-slate-400">
                   No enrolled students found.
                 </td>
-                <td className="py-3.5 text-right font-medium text-slate-400">{student.lastActive ?? 'Never'}</td>
               </tr>
             ) : (
               students.map((student) => (
@@ -37,14 +36,14 @@ function RosterTable({ students = [] }) {
                     <div className="text-[11px] text-slate-400 font-normal">{student.email}</div>
                   </td>
 
-                  {/* Programme */}
+                  {/* Programme - students.programme */}
                   <td className="py-3.5 px-4 font-medium text-slate-600">
-                    {student.programme}
+                    {student.programme || '—'}
                   </td>
 
-                  {/* Intake */}
+                  {/* Intake - students.intake */}
                   <td className="py-3.5 pl-4 text-right font-medium text-slate-500">
-                    {student.intake}
+                    {student.intake || '—'}
                   </td>
                 </tr>
               ))

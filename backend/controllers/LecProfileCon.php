@@ -18,7 +18,26 @@ function handleLecProfileRequest(): void
     }
 
     try {
-        sendLecJson(getLecProfileData($lecturerId));
+        switch (lecRequestMethod()) {
+            case 'GET':
+                sendLecJson(getLecProfileData($lecturerId));
+                return;
+
+            case 'POST':
+                $result = updateLecturerProfile($lecturerId, lecJsonBody());
+
+                if (!$result['success']) {
+                    sendLecApiError($result['message'], $result['status']);
+                    return;
+                }
+
+                sendLecJson(['success' => true, 'message' => $result['message']]);
+                return;
+
+            default:
+                sendLecMethodNotAllowed(['GET', 'POST']);
+                return;
+        }
 
     } catch (PDOException $e) {
         error_log('[LecProfileController] DB error: ' . $e->getMessage());

@@ -3,9 +3,12 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
-import { FaPlus, FaRegComment, FaEdit, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
+import EditQuizModal from './EditQuizModal.jsx';
+import QuizFeedbackModal from './QuizFeedbackModal.jsx';
+import { FaPlus, FaRegComment, FaEdit, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerQuizzes } from '../services/getLecturerQuizzes.jsx';
+import { deleteQuiz } from '../services/lecturerContentService.jsx';
 
 // Initial state mapped from database table screenshot
 const initialQuizzes = [
@@ -57,6 +60,9 @@ function ManageQuizzes() {
   const [quizzes, setQuizzes] = useState(initialQuizzes);
   const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal Open State
+  const [editingQuiz, setEditingQuiz] = useState(null);
+  const [feedbackQuiz, setFeedbackQuiz] = useState(null);
+  const [actionError, setActionError] = useState('');
 
   // Fetch updated list from PHP backend
   const fetchQuizzes = async () => {
@@ -99,16 +105,33 @@ function ManageQuizzes() {
   };
 
   const handleCommentClick = (quiz) => {
-    console.log('View comments for quiz:', quiz);
+    setFeedbackQuiz(quiz);
   };
 
   const handleEditClick = (quiz) => {
-    console.log('Edit quiz:', quiz);
+    setEditingQuiz(quiz);
   };
 
-  const handleDeleteClick = (quizId) => {
-    console.log('Delete quiz with ID:', quizId);
-    setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+  // Deletion removes the quiz's questions, attempts and feedback along with it
+  // (ON DELETE CASCADE), so it is worth confirming before calling the API.
+  const handleDeleteClick = async (quiz) => {
+    const confirmed = window.confirm(
+      `Delete "${quiz.title}"? This also removes its questions and any student attempts. This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setActionError('');
+
+    try {
+      await deleteQuiz(quiz.id);
+      // Refetch rather than filtering local state: the old code dropped the row
+      // from the table even when nothing was deleted on the server, so the quiz
+      // reappeared on the next page load.
+      await fetchQuizzes();
+    } catch (error) {
+      console.error('Error deleting quiz:', error);
+      setActionError(error.message);
+    }
   };
 
   return (
@@ -146,6 +169,14 @@ function ManageQuizzes() {
             <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-700 text-xs font-medium">
               <FaExclamationTriangle className="text-base shrink-0" />
               <span>Showing built-in sample data - could not reach the server. These rows are not from the database.</span>
+            </div>
+          )}
+
+          {/* Failed delete/update, shown instead of silently doing nothing */}
+          {actionError && (
+            <div className="flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-medium">
+              <FaExclamationCircle className="text-base shrink-0" />
+              <span>{actionError}</span>
             </div>
           )}
 
@@ -220,7 +251,7 @@ function ManageQuizzes() {
 
                               {/* Delete Button */}
                               <button
-                                onClick={() => handleDeleteClick(quiz.id)}
+                                onClick={() => handleDeleteClick(quiz)}
                                 title="Delete Quiz"
                                 className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 rounded-md transition-colors cursor-pointer"
                               >
@@ -244,6 +275,17 @@ function ManageQuizzes() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onQuizCreated={handleQuizCreated}
+      />
+
+      <EditQuizModal
+        quiz={editingQuiz}
+        onClose={() => setEditingQuiz(null)}
+        onQuizUpdated={fetchQuizzes}
+      />
+
+      <QuizFeedbackModal
+        quiz={feedbackQuiz}
+        onClose={() => setFeedbackQuiz(null)}
       />
     </div>
   );
