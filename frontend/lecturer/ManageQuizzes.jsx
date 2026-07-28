@@ -7,62 +7,41 @@ import { FaPlus, FaRegComment, FaEdit, FaTrashAlt, FaExclamationTriangle } from 
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerQuizzes } from '../services/getLecturerQuizzes.jsx';
 
-// Sample initial state fallback
+// Initial state mapped from database table screenshot
 const initialQuizzes = [
   {
     id: 1,
-    title: 'HTML5 Semantic Elements Quiz',
-    course: 'CS101',
-    topic: 'HTML Basics',
-    questions: 3,
+    title: 'Variables Quiz',
+    topic: 'Topic 1', // topic_id: 1
+    questions: 5,
     comments: 1,
   },
   {
     id: 2,
-    title: 'Flexbox & CSS Grid Mastery',
-    course: 'CS101',
-    topic: 'CSS Layouts',
-    questions: 2,
+    title: 'Control Flow Quiz',
+    topic: 'Topic 2', // topic_id: 2
+    questions: 5,
     comments: 1,
   },
   {
     id: 3,
-    title: 'Introductory SQL Querying',
-    course: 'CS202',
-    topic: 'SQL Basics',
-    questions: 2,
+    title: 'SQL Fundamentals Quiz',
+    topic: 'Topic 7', // topic_id: 7
+    questions: 10,
     comments: 0,
   },
   {
     id: 4,
-    title: 'Advanced Join Operations & Aggregations',
-    course: 'CS202',
-    topic: 'SQL Joins & Aggregations',
-    questions: 3,
-    comments: 1,
-  },
-  {
-    id: 5,
-    title: 'Relational Normalization Forms',
-    course: 'CS202',
-    topic: 'Database Normalization',
-    questions: 2,
+    title: 'Sorting Algorithms Quiz',
+    topic: 'Topic 5', // topic_id: 5
+    questions: 5,
     comments: 0,
   },
   {
-    id: 6,
-    title: 'Limits & Continuity Quiz',
-    course: 'MA101',
-    topic: 'Limits & Continuity',
-    questions: 2,
-    comments: 1,
-  },
-  {
-    id: 7,
-    title: 'Differentiation Rules Practice',
-    course: 'MA101',
-    topic: 'Derivatives Basics',
-    questions: 2,
+    id: 5,
+    title: 'Probability Basics Quiz',
+    topic: 'Topic 9', // topic_id: 9
+    questions: 8,
     comments: 0,
   },
 ];
@@ -100,18 +79,18 @@ function ManageQuizzes() {
     if (location.state?.openCreateModal) {
       setIsModalOpen(true);
 
-    // clear state so refresh does not reopen modal
+      // Clear state so refresh does not reopen modal
       window.history.replaceState({}, document.title);
     }
   }, [location]);
 
   // Action Handlers
   const handleCreateQuiz = () => {
-    setIsModalOpen(true); // 3. Open Modal
+    setIsModalOpen(true);
   };
 
   const handleQuizCreated = () => {
-    fetchQuizzes(); // 4. Refresh table after new quiz is saved
+    fetchQuizzes();
   };
 
   const handleCommentClick = (quiz) => {
@@ -177,7 +156,6 @@ function ManageQuizzes() {
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                       <th className="py-4 px-6">Quiz Title</th>
-                      <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Questions</th>
                       <th className="py-4 px-6 text-right">Actions</th>
@@ -191,11 +169,6 @@ function ManageQuizzes() {
                           {/* Title */}
                           <td className="py-4 px-6 font-semibold text-slate-800">
                             {quiz.title}
-                          </td>
-
-                          {/* Course */}
-                          <td className="py-4 px-6 text-slate-600 font-medium">
-                            {quiz.course}
                           </td>
 
                           {/* Topic */}
@@ -255,7 +228,7 @@ function ManageQuizzes() {
         </main>
       </div>
 
-      {/* 5. Integrated Pop-up Modal Component */}
+      {/* Integrated Pop-up Modal Component */}
       <CreateQuizModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

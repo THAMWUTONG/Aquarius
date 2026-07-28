@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/AuthContext.jsx';
-import Sidebar from '../components/Sidebar.jsx'; // Using your updated global Sidebar
+import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import StatCard from '../components/StatCard.jsx';
 import RosterTable from '../components/RoasterTable.jsx';
@@ -56,7 +56,6 @@ function LecturerDashboard() {
   if (!user || user.role !== 'lecturer' || loading || !dashboardData) {
     return null;
   }
-
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">

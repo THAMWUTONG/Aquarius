@@ -6,118 +6,68 @@ import UploadMaterialModal from './UploadMaterials.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 
-const initialMaterials = [
+const materialsData = [
   {
     id: 1,
-    title: 'Getting Started with Semantic HTML5',
-    course: 'CS101',
-    topic: 'HTML Basics',
-    type: 'PDF',
-    prerequisites: null,
+    title: 'Python Variables Slides',
+    description: 'Lecture slides for variables and data types.',
+    topic: 'Topic 1', // Maps to topic_id: 1
+    type: 'SLIDES',
+    prerequisites: '—',
   },
   {
     id: 2,
-    title: 'Mastering Flexbox and Grid Layouts',
-    course: 'CS101',
-    topic: 'CSS Layouts',
-    type: 'SLIDES',
+    title: 'Control Flow Video',
+    description: 'Video walkthrough of Python control flow.',
+    topic: 'Topic 2', // Maps to topic_id: 2
+    type: 'VIDEO',
     prerequisites: '1 topics',
   },
   {
     id: 3,
-    title: 'ES6+ JavaScript Fundamentals',
-    course: 'CS101',
-    topic: 'JS Fundamentals',
+    title: 'Functions Cheat Sheet',
+    description: 'Quick reference for Python functions.',
+    topic: 'Topic 3', // Maps to topic_id: 3
     type: 'PDF',
     prerequisites: '1 topics',
   },
   {
     id: 4,
-    title: 'Dynamic UI Development via DOM API',
-    course: 'CS101',
-    topic: 'DOM Manipulation',
-    type: 'PDF',
-    prerequisites: '1 topics',
+    title: 'Linked Lists Document',
+    description: 'Comprehensive notes on linked list operations.',
+    topic: 'Topic 4', // Maps to topic_id: 4
+    type: 'DOCUMENT',
+    prerequisites: '—',
   },
   {
     id: 5,
-    title: 'Relational Algebra & Schema Design',
-    course: 'CS202',
-    topic: 'Relational Model',
-    type: 'PDF',
-    prerequisites: null,
+    title: 'Sorting Algorithms Video',
+    description: 'Step-by-step visual explanation of sorting algorithms.',
+    topic: 'Topic 5', // Maps to topic_id: 5
+    type: 'VIDEO',
+    prerequisites: '1 topics',
   },
   {
     id: 6,
-    title: 'Basic SQL SELECT Statements & Filtering',
-    course: 'CS202',
-    topic: 'SQL Basics',
-    type: 'SLIDES',
-    prerequisites: '1 topics',
+    title: 'ER Diagram Tutorial',
+    description: 'How to draw ER diagrams with examples.',
+    topic: 'Topic 6', // Maps to topic_id: 6
+    type: 'PDF',
+    prerequisites: '—',
   },
   {
     id: 7,
-    title: 'Deep Dive: INNER, LEFT, RIGHT, and FULL Joins',
-    course: 'CS202',
-    topic: 'SQL Joins & Aggregations',
+    title: 'SQL Query Practice Set',
+    description: 'Practice SQL exercises with solutions.',
+    topic: 'Topic 7', // Maps to topic_id: 7
     type: 'PDF',
     prerequisites: '1 topics',
-  },
-  {
-    id: 8,
-    title: 'Database Normalization (1NF, 2NF, 3NF, BCNF)',
-    course: 'CS202',
-    topic: 'Database Normalization',
-    type: 'PDF',
-    prerequisites: '1 topics',
-  },
-  {
-    id: 9,
-    title: 'Understanding Limits and Continuous Functions',
-    course: 'MA101',
-    topic: 'Limits & Continuity',
-    type: 'PDF',
-    prerequisites: null,
-  },
-  {
-    id: 10,
-    title: 'The Power Rule, Product Rule, and Quotient Rule',
-    course: 'MA101',
-    topic: 'Derivatives Basics',
-    type: 'SLIDES',
-    prerequisites: '1 topics',
-  },
-  {
-    id: 11,
-    title: 'Chain Rule & Solving Optimization Problems',
-    course: 'MA101',
-    topic: 'Chain Rule & Optimization',
-    type: 'PDF',
-    prerequisites: '1 topics',
-  },
-  {
-    id: 12,
-    title: 'Definite and Indefinite Integrals',
-    course: 'MA101',
-    topic: 'Integrals Introduction',
-    type: 'PDF',
-    prerequisites: '1 topics',
-  },
-  {
-    id: 13,
-    title: 'Arrays vs Singly/Doubly Linked Lists',
-    course: 'CS204',
-    topic: 'Arrays & Linked Lists',
-    type: 'PDF',
-    prerequisites: null,
   },
 ];
 
 function ManageMaterials() {
-  const { user } = useAuth();
-  const [materials, setMaterials] = useState(initialMaterials);
-  const [isFallback, setIsFallback] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // 2. Modal open/close state
+  const [materials, setMaterials] = useState(materialsData);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Fetch the lecturer's real materials from the PHP backend.
   // The API field names are mapped onto the shape this table already expects,
@@ -155,7 +105,7 @@ function ManageMaterials() {
 
   // Handlers
   const handleUploadNew = () => {
-    setIsModalOpen(true); // 3. Triggers modal open
+    setIsModalOpen(true);
   };
 
   const handleMaterialUploaded = () => {
@@ -222,7 +172,6 @@ function ManageMaterials() {
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                       <th className="py-4 px-6">Material Title</th>
-                      <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Type</th>
                       <th className="py-4 px-6 text-center">Prerequisites</th>
@@ -237,17 +186,12 @@ function ManageMaterials() {
                           {item.title}
                         </td>
 
-                        {/* Course */}
-                        <td className="py-4 px-6 text-slate-600 font-medium">
-                          {item.course}
-                        </td>
-
                         {/* Topic */}
                         <td className="py-4 px-6 text-slate-500">
                           {item.topic}
                         </td>
 
-                        {/* Type Badge (PDF / SLIDES) */}
+                        {/* Type Badge */}
                         <td className="py-4 px-6 text-center">
                           <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider rounded text-slate-500 bg-slate-100/80 border border-slate-200/60 uppercase">
                             {item.type}
@@ -256,7 +200,7 @@ function ManageMaterials() {
 
                         {/* Prerequisites Badge */}
                         <td className="py-4 px-6 text-center">
-                          {item.prerequisites ? (
+                          {item.prerequisites && item.prerequisites !== '—' ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100">
                               <FaLink className="text-[10px]" />
                               {item.prerequisites}
@@ -269,7 +213,6 @@ function ManageMaterials() {
                         {/* Action Buttons */}
                         <td className="py-4 px-6">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Edit Button */}
                             <button
                               onClick={() => handleEditClick(item)}
                               title="Edit Material"
@@ -278,7 +221,6 @@ function ManageMaterials() {
                               <FaEdit className="text-xs" />
                             </button>
 
-                            {/* Delete Button */}
                             <button
                               onClick={() => handleDeleteClick(item.id)}
                               title="Delete Material"
@@ -298,7 +240,7 @@ function ManageMaterials() {
         </main>
       </div>
 
-      {/* 4. Integrated Pop-up Modal */}
+      {/* Integrated Pop-up Modal */}
       <UploadMaterialModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

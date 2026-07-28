@@ -1,46 +1,54 @@
 import React from 'react';
 
-function RosterTable({ students }) {
+function RosterTable({ students = [] }) {
   return (
     <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm shadow-slate-100/40">
+      {/* Table Header / Title */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xs font-bold text-slate-800 tracking-wide uppercase">
           Classroom Enrollment Roster
         </h3>
-        <select className="text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-slate-600 outline-none cursor-pointer">
-          <option>All Enrolled Classes</option>
-          <option>CS101</option>
-          <option>CS202</option>
-          <option>CS204</option>
-          <option>MA101</option>
-        </select>
       </div>
 
+      {/* Table Content */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-              <th className="pb-3 font-bold">Student Name</th>
-              <th className="pb-3 font-bold">Active Classes</th>
-              <th className="pb-3 font-bold text-right">Last Active</th>
+            <tr className="border-b border-slate-100 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
+              <th className="pb-3 pr-4">Student Name</th>
+              <th className="pb-3 px-4">Programme</th>
+              <th className="pb-3 pl-4 text-right">Intake</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 text-xs">
-            {students.map((student, idx) => (
-              <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                <td className="py-3.5 pr-4">
-                  <div className="font-semibold text-slate-800">{student.name}</div>
-                  <div className="text-[11px] text-slate-400">{student.email}</div>
-                </td>
-                <td className="py-3.5 pr-4 font-medium text-slate-600">
-                  {student.classes}
-                </td>
-                <td className="py-3.5 text-right font-medium text-slate-400">
-                  {student.lastActive}
+            {students.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="py-6 text-center text-slate-400">
+                  No enrolled students found.
                 </td>
                 <td className="py-3.5 text-right font-medium text-slate-400">{student.lastActive ?? 'Never'}</td>
               </tr>
-            ))}
+            ) : (
+              students.map((student) => (
+                <tr key={student.studentId || student.email} className="hover:bg-slate-50/50 transition-colors">
+                  {/* Student Name & Email */}
+                  <td className="py-3.5 pr-4">
+                    <div className="font-semibold text-slate-800">{student.name}</div>
+                    <div className="text-[11px] text-slate-400 font-normal">{student.email}</div>
+                  </td>
+
+                  {/* Programme */}
+                  <td className="py-3.5 px-4 font-medium text-slate-600">
+                    {student.programme}
+                  </td>
+
+                  {/* Intake */}
+                  <td className="py-3.5 pl-4 text-right font-medium text-slate-500">
+                    {student.intake}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
