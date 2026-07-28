@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import Sidebar from '../components/Sidebar.jsx'; // Using your updated global Sidebar
 import HeaderBar from '../components/HeaderBar.jsx';
@@ -15,15 +15,15 @@ const statsData = [
 ];
 
 const studentsData = [
-  { name: 'Alex Tan', email: 'alex.tan@aquarius.demo', classes: 'CS101, CS202, MA101', progress: 62, lastActive: '2026-07-18' },
-  { name: 'Beatrice Ng', email: 'beatrice.ng@aquarius.demo', classes: 'CS101, CS204', progress: 83, lastActive: '2026-07-19' },
-  { name: 'Charlie Koh', email: 'charlie.koh@aquarius.demo', classes: 'CS202, CS204', progress: 73, lastActive: '2026-07-17' },
-  { name: 'David Lee', email: 'david.lee@aquarius.demo', classes: 'MA101, CS204', progress: 35, lastActive: '2026-07-14' },
-  { name: 'Emily Tan', email: 'emily.tan@aquarius.demo', classes: 'CS101, CS202', progress: 75, lastActive: '2026-07-18' },
-  { name: 'Fiona Chan', email: 'fiona.chan@aquarius.demo', classes: 'CS101, MA101', progress: 90, lastActive: '2026-07-16' },
-  { name: 'George Wong', email: 'george.wong@aquarius.demo', classes: 'CS202, MA101', progress: 25, lastActive: '2026-07-12' },
-  { name: 'Hannah Lim', email: 'hannah.lim@aquarius.demo', classes: 'CS204', progress: 90, lastActive: '2026-07-19' },
-  { name: 'Ian Teh', email: 'ian.teh@aquarius.demo', classes: 'CS101, CS202, CS204', progress: 38, lastActive: '2026-07-15' },
+  { name: 'Alex Tan', email: 'alex.tan@aquarius.demo', classes: 'CS101, CS202, MA101', lastActive: '2026-07-18' },
+  { name: 'Beatrice Ng', email: 'beatrice.ng@aquarius.demo', classes: 'CS101, CS204', lastActive: '2026-07-19' },
+  { name: 'Charlie Koh', email: 'charlie.koh@aquarius.demo', classes: 'CS202, CS204', lastActive: '2026-07-17' },
+  { name: 'David Lee', email: 'david.lee@aquarius.demo', classes: 'MA101, CS204', lastActive: '2026-07-14' },
+  { name: 'Emily Tan', email: 'emily.tan@aquarius.demo', classes: 'CS101, CS202', lastActive: '2026-07-18' },
+  { name: 'Fiona Chan', email: 'fiona.chan@aquarius.demo', classes: 'CS101, MA101', lastActive: '2026-07-16' },
+  { name: 'George Wong', email: 'george.wong@aquarius.demo', classes: 'CS202, MA101', lastActive: '2026-07-12' },
+  { name: 'Hannah Lim', email: 'hannah.lim@aquarius.demo', classes: 'CS204', lastActive: '2026-07-19' },
+  { name: 'Ian Teh', email: 'ian.teh@aquarius.demo', classes: 'CS101, CS202, CS204', lastActive: '2026-07-15' },
 ];
 
 const shortcutsData = [
@@ -34,6 +34,7 @@ const shortcutsData = [
 
 function LecturerDashboard() {
   const { user } = useAuth();
+
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">

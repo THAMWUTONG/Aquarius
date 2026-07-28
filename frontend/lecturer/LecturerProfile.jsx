@@ -9,8 +9,8 @@ function LecturerProfile() {
 
   // Form State initialized with logged-in user or default lecturer data
   const [profileData, setProfileData] = useState({
-    name: user?.name || 'Dr. Sarah Lim',
-    email: user?.email || 'sarah.lim@aquarius.edu.my',
+    name: user?.name || 'Prof. Sara Ali',
+    email: user?.email || 'sali@uni.edu',
     department: 'School of Computing & IT',
     currentPassword: '',
     newPassword: '',
@@ -132,7 +132,7 @@ function LecturerProfile() {
 
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Full Name */}
+                  {/* Full Name (Read-Only) */}
                   <div>
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                       Full Name
@@ -143,15 +143,14 @@ function LecturerProfile() {
                         type="text"
                         name="name"
                         value={profileData.name}
-                        onChange={handleChange}
-                        placeholder="e.g., Dr. Sarah Lim"
-                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
-                        required
+                        readOnly
+                        disabled
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500 cursor-not-allowed focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  {/* Email Address */}
+                  {/* Email Address (Read-Only) */}
                   <div>
                     <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                       Email Address
@@ -162,16 +161,15 @@ function LecturerProfile() {
                         type="email"
                         name="email"
                         value={profileData.email}
-                        onChange={handleChange}
-                        placeholder="e.g., sarah.lim@aquarius.edu.my"
-                        className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
-                        required
+                        readOnly
+                        disabled
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500 cursor-not-allowed focus:outline-none"
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Faculty / Department (Read-only reference) */}
+                {/* Faculty / Department (Read-Only) */}
                 <div>
                   <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
                     Department / School
@@ -180,8 +178,9 @@ function LecturerProfile() {
                     type="text"
                     name="department"
                     value={profileData.department}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 transition-all"
+                    readOnly
+                    disabled
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-500 cursor-not-allowed focus:outline-none"
                   />
                 </div>
               </div>
