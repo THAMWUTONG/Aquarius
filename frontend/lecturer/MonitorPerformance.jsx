@@ -5,7 +5,16 @@ import { FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerPerformanceData } from '../services/getLecturerPerformanceData.jsx';
 
-// Sample chart data - easy to connect to dynamic backend calculations later
+// Sample gradebook shown until the first fetch resolves, and kept on screen
+// (behind the warning banner) when the API cannot be reached.
+const initialGradebook = [
+  { id: 1, name: 'Alex Tan', email: 'alex.tan@aquarius.demo', attempts: 1, avgScore: '88%', quizScore: '100%' },
+  { id: 2, name: 'Beatrice Ng', email: 'beatrice.ng@aquarius.demo', attempts: 0, avgScore: '72%', quizScore: '—' },
+  { id: 3, name: 'Emily Tan', email: 'emily.tan@aquarius.demo', attempts: 0, avgScore: '65%', quizScore: '—' },
+  { id: 4, name: 'Fiona Chan', email: 'fiona.chan@aquarius.demo', attempts: 0, avgScore: '80%', quizScore: '—' },
+  { id: 5, name: 'Ian Teh', email: 'ian.teh@aquarius.demo', attempts: 0, avgScore: '—', quizScore: '—' },
+];
+
 const scoreAveragesData = [
   { course: 'CS101', average: 100 },
   { course: 'CS202', average: 50 },
@@ -22,50 +31,6 @@ const completionRatesData = [
   { topic: 'Derivatives Basics', rate: 14 },
 ];
 
-// Sample gradebook data
-const initialGradebook = [
-  {
-    id: 1,
-    name: 'Alex Tan',
-    email: 'alex.tan@aquarius.demo',
-    status: 'Passed',
-    attempts: 1,
-    bestScore: '100%',
-  },
-  {
-    id: 2,
-    name: 'Beatrice Ng',
-    email: 'beatrice.ng@aquarius.demo',
-    status: 'No Attempt',
-    attempts: 0,
-    bestScore: '—',
-  },
-  {
-    id: 3,
-    name: 'Emily Tan',
-    email: 'emily.tan@aquarius.demo',
-    status: 'No Attempt',
-    attempts: 0,
-    bestScore: '—',
-  },
-  {
-    id: 4,
-    name: 'Fiona Chan',
-    email: 'fiona.chan@aquarius.demo',
-    status: 'No Attempt',
-    attempts: 0,
-    bestScore: '—',
-  },
-  {
-    id: 5,
-    name: 'Ian Teh',
-    email: 'ian.teh@aquarius.demo',
-    status: 'No Attempt',
-    attempts: 0,
-    bestScore: '—',
-  },
-];
-
 function MonitorPerformance() {
   const { user } = useAuth();
   const [gradebook, setGradebook] = useState(initialGradebook);
@@ -80,7 +45,7 @@ function MonitorPerformance() {
 
   // Pull the three analytics datasets from one endpoint.
   // API values are mapped onto the shapes the charts and table already use,
-  // so no JSX below needs to change. bestScore stays a dash when a student has
+  // so no JSX below needs to change. Scores stay a dash when a student has
   // never attempted a quiz - showing '0%' would wrongly imply they sat and failed.
   // Refetches whenever a filter changes: the gradebook is narrowed server-side
   // so the attempt counts and best scores stay correct for the selection,
@@ -118,7 +83,8 @@ function MonitorPerformance() {
             email: student.email,
             status: student.status,
             attempts: student.attempts,
-            bestScore: student.bestScore === null ? '—' : `${student.bestScore}%`,
+            avgScore: student.avgScore === null ? '—' : `${student.avgScore}%`,
+            quizScore: student.bestScore === null ? '—' : `${student.bestScore}%`,
           }))
         );
 
@@ -171,7 +137,6 @@ function MonitorPerformance() {
               </h3>
               
               <div className="relative h-64 flex items-end justify-between px-4 pt-6 border-b border-l border-slate-200">
-                {/* Y-Axis Guidelines */}
                 <div className="absolute inset-x-0 top-0 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 100</div>
                 <div className="absolute inset-x-0 top-1/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 75</div>
                 <div className="absolute inset-x-0 top-2/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 50</div>
@@ -199,7 +164,6 @@ function MonitorPerformance() {
               </h3>
 
               <div className="relative h-64 flex items-end justify-between px-2 pt-6 border-b border-l border-slate-200">
-                {/* Y-Axis Guidelines */}
                 <div className="absolute inset-x-0 top-0 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 100</div>
                 <div className="absolute inset-x-0 top-1/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 75</div>
                 <div className="absolute inset-x-0 top-2/4 border-b border-dashed border-slate-100 flex justify-start text-[10px] text-slate-400 pl-1">- 50</div>
@@ -224,7 +188,7 @@ function MonitorPerformance() {
 
           {/* Classroom Gradebook Card */}
           <div className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">
-            {/* Table Filter Controls */}
+            {/* Table Header & Dropdown Filters */}
             <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-slate-800">
@@ -235,8 +199,9 @@ function MonitorPerformance() {
                 </p>
               </div>
 
-              {/* Dropdown Filters */}
+              {/* Cascading Dropdowns */}
               <div className="flex flex-wrap items-center gap-3">
+                {/* First Dropdown: Course Selection */}
                 <select
                   value={selectedCourse}
                   onChange={(e) => {
@@ -256,6 +221,7 @@ function MonitorPerformance() {
                   ))}
                 </select>
 
+                {/* Second Dropdown: Quiz Title Selection */}
                 <select
                   value={selectedQuiz}
                   onChange={(e) => setSelectedQuiz(e.target.value)}
@@ -278,10 +244,10 @@ function MonitorPerformance() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
-                    <th className="py-4 px-6">Student</th>
-                    <th className="py-4 px-6 text-center">Status</th>
+                    <th className="py-4 px-6">Student Name</th>
                     <th className="py-4 px-6 text-center">Attempts</th>
-                    <th className="py-4 px-6 text-right">Best Score</th>
+                    <th className="py-4 px-6 text-right">Average Score</th>
+                    <th className="py-4 px-6 text-right">Quiz Score</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -293,7 +259,10 @@ function MonitorPerformance() {
                     </tr>
                   )}
                   {gradebook.map((student) => {
-                    const isPassed = student.status === 'Passed';
+                    // A dash means the student never sat a quiz, so the score is
+                    // greyed out rather than presented as a real result.
+                    const hasAvg = student.avgScore !== '—';
+                    const hasAttempted = student.quizScore !== '—';
                     return (
                       <tr key={student.id} className="hover:bg-slate-50/60 transition-colors">
                         {/* Student Name & Email */}
@@ -306,29 +275,23 @@ function MonitorPerformance() {
                           </div>
                         </td>
 
-                        {/* Status Badge */}
-                        <td className="py-4 px-6 text-center">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 text-[11px] font-semibold rounded-full ${
-                              isPassed
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-slate-100 text-slate-500'
-                            }`}
-                          >
-                            {student.status}
-                          </span>
-                        </td>
-
                         {/* Attempts */}
                         <td className="py-4 px-6 text-center font-medium text-slate-700">
                           {student.attempts}
                         </td>
 
-                        {/* Best Score */}
-                        <td className={`py-4 px-6 text-right font-bold ${
-                          isPassed ? 'text-emerald-600' : 'text-slate-400'
+                        {/* Average Score */}
+                        <td className={`py-4 px-6 text-right font-medium ${
+                          hasAvg ? 'text-slate-700' : 'text-slate-300'
                         }`}>
-                          {student.bestScore}
+                          {student.avgScore}
+                        </td>
+
+                        {/* Quiz Score */}
+                        <td className={`py-4 px-6 text-right font-bold ${
+                          hasAttempted ? 'text-emerald-600' : 'text-slate-300 font-normal'
+                        }`}>
+                          {student.quizScore}
                         </td>
                       </tr>
                     );
