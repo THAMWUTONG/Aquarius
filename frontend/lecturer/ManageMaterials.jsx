@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaLink, FaEdit, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaLink, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import EditMaterialButton from '../components/EditMaterialButton.jsx';
 import UploadMaterialModal from './UploadMaterials.jsx';
 import EditMaterialModal from './EditMaterialModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -70,7 +71,7 @@ const initialMaterials = [
 
 function ManageMaterials() {
   const { user } = useAuth();
-  const [materials, setMaterials] = useState(materialsData);
+  const [materials, setMaterials] = useState(initialMaterials);
   const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
@@ -279,18 +280,12 @@ function ManageMaterials() {
 
       {/* Integrated Upload Modal */}
       <UploadMaterialModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onMaterialUploaded={handleMaterialUploaded}
       />
 
       {/* Integrated Edit Modal */}
-      <EditMaterialModal
-        isOpen={isEditOpen}
-        onClose={() => setIsEditOpen(false)}
-        material={selectedMaterial}
-        onSave={handleSaveMaterial}
-      />
-
       <EditMaterialModal
         material={editingMaterial}
         onClose={() => setEditingMaterial(null)}
