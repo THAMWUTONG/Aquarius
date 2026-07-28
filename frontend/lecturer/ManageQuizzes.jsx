@@ -12,35 +12,40 @@ const initialQuizzes = [
   {
     id: 1,
     title: 'Variables Quiz',
-    topic: 'Topic 1', // topic_id: 1
+    course: 'Introduction to Programming', // course_id: 1
+    topic: 'Variables & Data Types',       // topic_id: 1
     questions: 5,
     comments: 1,
   },
   {
     id: 2,
     title: 'Control Flow Quiz',
-    topic: 'Topic 2', // topic_id: 2
+    course: 'Introduction to Programming', // course_id: 1
+    topic: 'If-else, loops, and logical operators', // topic_id: 2
     questions: 5,
     comments: 1,
   },
   {
     id: 3,
     title: 'SQL Fundamentals Quiz',
-    topic: 'Topic 7', // topic_id: 7
+    course: 'Database Systems',             // course_id: 3
+    topic: 'SQL Queries',                   // topic_id: 7
     questions: 10,
     comments: 0,
   },
   {
     id: 4,
     title: 'Sorting Algorithms Quiz',
-    topic: 'Topic 5', // topic_id: 5
+    course: 'Data Structures & Algorithms', // course_id: 2
+    topic: 'Bubble, merge, quick sort',     // topic_id: 5
     questions: 5,
     comments: 0,
   },
   {
     id: 5,
     title: 'Probability Basics Quiz',
-    topic: 'Topic 9', // topic_id: 9
+    course: 'Statistics for Data Science',  // course_id: 4
+    topic: 'Probability Distributions',     // topic_id: 9
     questions: 8,
     comments: 0,
   },
@@ -156,6 +161,7 @@ function ManageQuizzes() {
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                       <th className="py-4 px-6">Quiz Title</th>
+                      <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Questions</th>
                       <th className="py-4 px-6 text-right">Actions</th>
@@ -169,6 +175,11 @@ function ManageQuizzes() {
                           {/* Title */}
                           <td className="py-4 px-6 font-semibold text-slate-800">
                             {quiz.title}
+                          </td>
+
+                          {/* Course */}
+                          <td className="py-4 px-6 text-slate-700 font-medium">
+                            {quiz.course}
                           </td>
 
                           {/* Topic */}
