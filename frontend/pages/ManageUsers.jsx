@@ -13,7 +13,7 @@ import { FaPlus, FaEye, FaPen, FaTrash } from "react-icons/fa"
 // NOTE: role values must match whatever is stored in the `users.role` column.
 // Sidebar.jsx currently checks "teacher" while the DB schema's role ENUM
 // uses "lecturer" — confirm which one is authoritative before wiring the backend.
-const ROLE_OPTIONS = ["student", "teacher", "admin"];
+const ROLE_OPTIONS = ["student", "lecturer", "admin"];
 
 /**
  * Derives an "active"/"inactive" status label from a user's last_access

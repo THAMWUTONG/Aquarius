@@ -29,22 +29,3 @@ export async function fetchScoreTrend() {
 
   return data;
 }
-
-/**
- * Pseudocode: fetchScoreTrend()
- *   TRY: GET /api/PlatformRegulation.php?action=score-trend (with session credentials)
- *   CATCH network error: THROW "Unable to reach the server"
- *   TRY: parse response body as JSON
- *   CATCH parse error: THROW "Received an invalid response from the server"
- *   IF response.ok is false: THROW Error(data.message OR "Failed to load score trend")
- *   RETURN parsed array of { period, averageScore }
- *
- * Test Plan: fetchScoreTrend()
- *   Intended input:
- *     - Valid admin session, endpoint returns 200 + array of weekly averages
- *       -> expect resolved array, each item having period (string) and averageScore (number)
- *   Incorrect input:
- *     - No quiz attempts exist yet -> expect resolved empty array (not an error)
- *     - Endpoint returns 401/500 -> expect rejection with server's message
- *     - Network failure -> expect rejection with "Unable to reach the server..."
- */
