@@ -158,6 +158,9 @@ function formatGradebook(array $rows): array
         $attempts = (int) $row['attempts'];
         $hasAttempt = $attempts > 0 && $row['best_score'] !== null;
         $bestScore = $hasAttempt ? (int) round((float) $row['best_score']) : null;
+        $avgScore = $hasAttempt && $row['avg_score'] !== null
+            ? (int) round((float) $row['avg_score'])
+            : null;
 
         if (!$hasAttempt) {
             $status = 'No Attempt';
@@ -172,6 +175,7 @@ function formatGradebook(array $rows): array
             'name' => $row['name'],
             'email' => $row['email'],
             'attempts' => $attempts,
+            'avgScore' => $avgScore,
             'bestScore' => $bestScore,
             'status' => $status,
         ];

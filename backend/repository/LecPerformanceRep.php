@@ -136,6 +136,7 @@ function getLecturerGradebook(int $lecturerUserId, ?int $courseId = null, ?int $
                 u.name,
                 u.email,
                 COUNT(DISTINCT qa.id) AS attempts,
+                AVG(qa.score / qmax.max_score * 100) AS avg_score,
                 MAX(qa.score / qmax.max_score * 100) AS best_score
             FROM lecturers l
             JOIN courses c    ON c.lecturer_id = l.lecturer_id
