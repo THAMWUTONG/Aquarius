@@ -119,4 +119,25 @@ class PlatformRegulationLogic {
     public function getPerformanceData(): array {
         return $this->repo->getCoursePerformance();
     }
+
+    // all materials regardless of regulation_status — used by the admin
+    // regulation table, which needs to show/re-review already-decided items too
+    public function getAllMaterials(): array {
+        return $this->repo->getAllStudyMaterials();
+    }
+
+    // all quizzes regardless of regulation_status
+    public function getAllQuizzesForRegulation(): array {
+        return $this->repo->getAllQuizzes();
+    }
+
+    // topics where a meaningful number of students are scoring below threshold
+    public function getWeakTopics(): array {
+        return $this->repo->getSystemWideWeakTopics();
+    }
+
+    // average quiz score per week, most recent 12 weeks
+    public function getScoreTrend(): array {
+        return $this->repo->getScoreTrendByWeek();
+    }
 }

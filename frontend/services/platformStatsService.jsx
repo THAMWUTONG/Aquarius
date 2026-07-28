@@ -1,17 +1,21 @@
-/**
- * Fetches detailed platform statistics for the Platform Statistics page:
- * usage over time, system-wide weak topics, and overall performance trend.
- * @returns {Promise<Object>} Resolves with { usageOverTime, weakTopics, performanceTrend }.
- * @throws {Error} If the request fails.
- */
 export async function fetchPlatformStatistics() {
-  const response = await fetch('/api/platform-statistics.php', {
-    method: 'GET',
-    credentials: 'include',
-  });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to load platform statistics');
-  }
-  return data;
+  const [statsRes, weakTopicsRes, trendRes] = await Promise.all([
+    fetch('/api/PlatformRegulation.php?action=stats', { credentials: 'include' }),
+    fetch('/api/PlatformRegulation.php?action=weak-topics', { credentials: 'include' }),
+    fetch('/api/PlatformRegulation.php?action=score-trend', { credentials: 'include' }),
+  ]);
+
+  const stats = await statsRes.json();
+  const weakTopics = await weakTopicsRes.json();
+  const performanceTrend = await trendRes.json();
+
+  if (!statsRes.ok) throw new Error(stats.message || 'Failed to load platform statistics');
+
+  return {
+    averageScore: null,
+    activeUsersToday: stats.active_users_today,
+    usageOverTime: [],
+    weakTopics: weakTopicsRes.ok ? weakTopics : [],
+    performanceTrend: trendRes.ok ? performanceTrend : [],
+  };
 }

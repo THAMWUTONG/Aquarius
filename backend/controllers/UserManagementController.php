@@ -83,6 +83,9 @@ class UserManagementController {
                 case 'POST':
                     $this->handlePost($action, $adminId);
                     break;
+                case 'PUT':
+                    $this->handlePut($action, $adminId);
+                    break;
                 case 'DELETE':
                     $this->handleDelete($action, $adminId);
                     break;
@@ -137,6 +140,9 @@ class UserManagementController {
     // check input user_id is valid int and not 0 and create it
     // if false, throw error message
     // if success send response and 201==created
+    //
+    // also handles create-user: general account creation (student/lecturer/admin),
+    // separate from create-admin which only promotes an EXISTING user to admin.
     private function handlePost(string $action, int $adminId): void {
         $input = $this->getInputData();
         
@@ -149,6 +155,39 @@ class UserManagementController {
                 $data = $this->logic->createAdminUser($userId);
                 $this->sendResponse($data, 201);
                 break;
+            case 'create-user':
+                $name = trim($input['name'] ?? '');
+                $email = trim($input['email'] ?? '');
+                $password = $input['password'] ?? '';
+                $role = $input['role'] ?? '';
+                if (!$name || !$email || !$password || !$role) {
+                    throw new Exception("Name, email, password, and role required", 400);
+                }
+                $data = $this->logic->createUserAccount($adminId, $name, $email, $password, $role);
+                $this->sendResponse($data, 201);
+                break;
+            default:
+                throw new Exception("Action not found", 404);
+        }
+    }
+    
+    // update-user: edits an existing user's name/email.
+    // NOTE: role is intentionally not editable here — see updateUserAccount()
+    // in UserManagementLogic.php for why.
+    private function handlePut(string $action, int $adminId): void {
+        $input = $this->getInputData();
+        
+        switch ($action) {
+            case 'update-user':
+                $userId = intval($input['user_id'] ?? 0);
+                $name = trim($input['name'] ?? '');
+                $email = trim($input['email'] ?? '');
+                if (!$userId || !$name || !$email) {
+                    throw new Exception("User ID, name, and email required", 400);
+                }
+                $data = $this->logic->updateUserAccount($adminId, $userId, $name, $email);
+                $this->sendResponse($data);
+                break;
             default:
                 throw new Exception("Action not found", 404);
         }
@@ -158,6 +197,8 @@ class UserManagementController {
     // check value, throw error message when false
     // no userid cannot, userid= admin him/herself cannot
     // success show message remove successfully
+    //
+    // also handles delete-user: fully deletes any account (not just admins).
     private function handleDelete(string $action, int $adminId): void {
         switch ($action) {
             case 'remove-admin':
@@ -170,6 +211,14 @@ class UserManagementController {
                 }
                 $result = $this->logic->removeAdminRole($userId);
                 $this->sendResponse(['message' => 'Admin role removed successfully', 'success' => $result]);
+                break;
+            case 'delete-user':
+                $userId = intval($_GET['user_id'] ?? 0);
+                if (!$userId) {
+                    throw new Exception("User ID required", 400);
+                }
+                $result = $this->logic->deleteUserAccount($adminId, $userId);
+                $this->sendResponse(['message' => 'User deleted successfully', 'success' => $result]);
                 break;
             default:
                 throw new Exception("Action not found", 404);

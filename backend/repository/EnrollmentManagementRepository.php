@@ -85,4 +85,23 @@ class EnrollmentManagementRepository {
             ':action' => $action
         ]);
     }
+
+    // full course list (id, title) — used to populate the enroll-student course dropdown
+    public function getAllCourses(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("SELECT id, title FROM courses ORDER BY title");
+        return $stmt->fetchAll();
+    }
+
+    // ON DUPLICATE KEY reactivates a previously-disenrolled record instead of
+    // erroring, since (student_id, course_id) has a unique constraint in the schema.
+    public function insertEnrollment(int $studentId, int $courseId): bool {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("
+            INSERT INTO enrollment (student_id, course_id, status)
+            VALUES (:student_id, :course_id, 'active')
+            ON DUPLICATE KEY UPDATE status = 'active'
+        ");
+        return $stmt->execute([':student_id' => $studentId, ':course_id' => $courseId]);
+    }
 }

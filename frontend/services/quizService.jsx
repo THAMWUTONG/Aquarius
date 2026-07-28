@@ -1,10 +1,5 @@
-/**
- * Fetches all quizzes for regulation review.
- * @returns {Promise<Array>}
- * @throws {Error} If the request fails.
- */
 export async function fetchQuizzes() {
-  const response = await fetch('/api/quizzes.php', {
+  const response = await fetch('/api/PlatformRegulation.php?action=all-quizzes', {
     method: 'GET',
     credentials: 'include',
   });
@@ -12,30 +7,20 @@ export async function fetchQuizzes() {
   if (!response.ok) {
     throw new Error(data.message || 'Failed to load quizzes');
   }
-  return data;
+  return data.map((q) => ({ id: q.id, title: q.title, courseName: q.course_title, status: q.regulation_status }));
 }
 
-/**
- * Updates a quiz's regulation status.
- * @param {number} quizId
- * @param {"approved"|"rejected"|"flagged"} status
- * @returns {Promise<Object>}
- * @throws {Error} If quizId/status is invalid or the request fails.
- */
 export async function updateQuizStatus(quizId, status) {
   const validStatuses = ["approved", "rejected", "flagged"];
-  if (!Number.isInteger(quizId) || quizId <= 0) {
-    throw new Error('A valid quiz ID is required.');
-  }
   if (!validStatuses.includes(status)) {
     throw new Error(`Status must be one of: ${validStatuses.join(", ")}`);
   }
 
-  const response = await fetch(`/api/quizzes.php?id=${quizId}`, {
-    method: 'PATCH',
+  const response = await fetch('/api/PlatformRegulation.php?action=regulate-quiz', {
+    method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ quiz_id: quizId, status }),
   });
   const data = await response.json();
   if (!response.ok) {

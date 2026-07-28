@@ -80,6 +80,9 @@ class EnrollmentManagementController {
                 case 'GET':
                     $this->handleGet($action);
                     break;
+                case 'POST':
+                    $this->handlePost($action, $adminId);
+                    break;
                 case 'PUT':
                     $this->handlePut($action, $adminId);
                     break;
@@ -95,6 +98,7 @@ class EnrollmentManagementController {
     // get method request by frontend
     // enrollment action--enroll by logic
     // get stats need authorize course id...failed throw message,success go logic action
+    // courses action--full course list, used to populate the enroll-student dropdown
     // default throw error message
     // success end send data to frontend
     private function handleGet(string $action): void {
@@ -109,11 +113,38 @@ class EnrollmentManagementController {
                 }
                 $data = $this->logic->getCourseStats($courseId);
                 break;
+            case 'courses':
+                $data = $this->logic->getCourses();
+                break;
             default:
                 throw new Exception("Action not found", 404);
         }
         
         $this->sendResponse($data);
+    }
+    
+    // post method to enroll a student into a course (new enrollment row,
+    // as opposed to update-enrollment below which only flips status on an
+    // EXISTING row)
+    // require student_id and course_id, without either one error
+    // go to logic when success and send response 201==created
+    // default error throw error message
+    private function handlePost(string $action, int $adminId): void {
+        $input = $this->getInputData();
+        
+        switch ($action) {
+            case 'enroll':
+                $studentId = intval($input['student_id'] ?? 0);
+                $courseId = intval($input['course_id'] ?? 0);
+                if (!$studentId || !$courseId) {
+                    throw new Exception("Student ID and course ID required", 400);
+                }
+                $data = $this->logic->createEnrollment($adminId, $studentId, $courseId);
+                $this->sendResponse($data, 201);
+                break;
+            default:
+                throw new Exception("Action not found", 404);
+        }
     }
     
     // put method input enrollement data

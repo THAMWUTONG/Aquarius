@@ -1,7 +1,20 @@
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import SidebarNavItems from "./SidebarNavItems.jsx"
-import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
+import {
+  FaHome,
+  FaBook,
+  FaGraduationCap,
+  FaChartLine,
+  FaCalendarAlt,
+  FaUser,
+  FaSignOutAlt,
+  FaUsersCog,
+  FaChartBar,
+  FaShieldAlt,
+  FaUserGraduate,
+  FaHistory,
+} from "react-icons/fa";
 
 function Sidebar() {
   const { user } = useAuth();
@@ -37,7 +50,7 @@ function Sidebar() {
           <SidebarNavItems displayedText="Platform Regulation" icon={ <FaShieldAlt /> } href="/platform-regulation" />
           <SidebarNavItems displayedText="Manage Enrollment" icon={ <FaUserGraduate /> } href="/manage-enrollment" />
           <SidebarNavItems displayedText="Audit Log" icon={ <FaHistory /> } href="/audit-log" />
-          <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/profile" />
+          <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/admin-profile" />
           <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
 

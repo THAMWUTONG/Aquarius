@@ -66,4 +66,30 @@ class EnrollmentManagementLogic {
     public function getCourseStats(int $courseId): array {
         return $this->repo->getCourseEnrollmentStats($courseId);
     }
+
+    // full course list, used to populate the "enroll student" course dropdown
+    public function getCourses(): array {
+        return $this->repo->getAllCourses();
+    }
+
+    // creates a brand-new enrollment (as opposed to updateEnrollment above,
+    // which only changes status on a row that already exists)
+    public function createEnrollment(int $adminId, int $studentId, int $courseId): array {
+        $student = $this->userRepo->getUserById($studentId);
+        if (!$student || $student['role'] !== 'student') {
+            throw new Exception("Student not found", 404);
+        }
+
+        $result = $this->repo->insertEnrollment($studentId, $courseId);
+        if (!$result) {
+            throw new Exception("Failed to enroll student", 500);
+        }
+
+        $this->repo->logAction($adminId, "Enrolled student ID {$studentId} into course ID {$courseId}");
+        return [
+            'message' => 'Student enrolled successfully',
+            'student_id' => $studentId,
+            'course_id' => $courseId
+        ];
+    }
 }

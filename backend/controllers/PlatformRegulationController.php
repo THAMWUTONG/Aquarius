@@ -95,6 +95,10 @@ class PlatformRegulationController {
     // get method request by frontend
     // get dashboard action (platform stats & performance data) from logic
     // get pending quizzes, pending materials, and performance with showing like table with several records
+    // all-materials/all-quizzes return EVERY item regardless of status (unlike
+    // pending-materials/pending-quizzes which only return status='pending'),
+    // used by the admin regulation table that needs to show/re-review anything
+    // weak-topics/score-trend power the Platform Statistics charts
     // stats should get back the statistics to show
     // default throw error message
     // success end send data to frontend
@@ -111,6 +115,18 @@ class PlatformRegulationController {
                 break;
             case 'pending-quizzes':
                 $data = $this->logic->getPendingQuizzes();
+                break;
+            case 'all-materials':
+                $data = $this->logic->getAllMaterials();
+                break;
+            case 'all-quizzes':
+                $data = $this->logic->getAllQuizzesForRegulation();
+                break;
+            case 'weak-topics':
+                $data = $this->logic->getWeakTopics();
+                break;
+            case 'score-trend':
+                $data = $this->logic->getScoreTrend();
                 break;
             case 'performance':
                 $data = $this->logic->getPerformanceData();

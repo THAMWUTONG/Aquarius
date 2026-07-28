@@ -4,7 +4,7 @@
  * @throws {Error} If the request fails.
  */
 export async function fetchMaterials() {
-  const response = await fetch('/api/materials.php', {
+  const response = await fetch('/api/PlatformRegulation.php?action=all-materials', {
     method: 'GET',
     credentials: 'include',
   });
@@ -12,30 +12,20 @@ export async function fetchMaterials() {
   if (!response.ok) {
     throw new Error(data.message || 'Failed to load materials');
   }
-  return data;
+  return data.map((m) => ({ id: m.id, title: m.title, courseName: m.course_title, status: m.regulation_status }));
 }
 
-/**
- * Updates a study material's regulation status.
- * @param {number} materialId
- * @param {"approved"|"rejected"|"flagged"} status
- * @returns {Promise<Object>}
- * @throws {Error} If materialId/status is invalid or the request fails.
- */
 export async function updateMaterialStatus(materialId, status) {
-  const validStatuses = ["approved", "rejected", "flagged"];
-  if (!Number.isInteger(materialId) || materialId <= 0) {
-    throw new Error('A valid material ID is required.');
-  }
+  const validStatuses = ["approved", "rejected"];
   if (!validStatuses.includes(status)) {
     throw new Error(`Status must be one of: ${validStatuses.join(", ")}`);
   }
 
-  const response = await fetch(`/api/materials.php?id=${materialId}`, {
-    method: 'PATCH',
+  const response = await fetch('/api/PlatformRegulation.php?action=regulate-material', {
+    method: 'PUT',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ material_id: materialId, status }),
   });
   const data = await response.json();
   if (!response.ok) {

@@ -13,7 +13,7 @@ import PlatformStatistics from "./pages/PlatformStatistics.jsx"
 import PlatformRegulation from "./pages/PlatformRegulation.jsx"
 import ManageEnrollment from "./pages/ManageEnrollment.jsx"
 import AuditLog from "./pages/AuditLog.jsx"
-
+import AdminProfile from "./pages/AdminProfile.jsx"
 
 function App() {
   return (
@@ -32,6 +32,7 @@ function App() {
       <Route path="/platform-regulation" element={<PlatformRegulation />} />
       <Route path="/manage-enrollment" element={<ManageEnrollment />} />
       <Route path="/audit-log" element={<AuditLog />} />
+      <Route path="/admin-profile" element={<AdminProfile />} />
     </Routes>
   )
 }

@@ -182,4 +182,67 @@ class PlatformRegulationRepository {
             ':action' => $action
         ]);
     }
+
+    // ALL study materials regardless of status (unlike getPendingStudyMaterials above)
+    public function getAllStudyMaterials(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("
+            SELECT sm.*, u.name as uploaded_by_name, t.title as topic_title, c.title as course_title
+            FROM study_materials sm
+            JOIN users u ON sm.uploaded_by = u.id
+            JOIN topics t ON sm.topic_id = t.id
+            JOIN courses c ON t.course_id = c.id
+            ORDER BY sm.uploaded_at DESC
+        ");
+        return $stmt->fetchAll();
+    }
+
+    // ALL quizzes regardless of status (unlike getPendingQuizzes above)
+    public function getAllQuizzes(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("
+            SELECT q.*, u.name as created_by_name, t.title as topic_title, c.title as course_title,
+                   (SELECT COUNT(*) FROM quiz_questions WHERE quiz_id = q.id) as question_count
+            FROM quizzes q
+            JOIN users u ON q.created_by = u.id
+            JOIN topics t ON q.topic_id = t.id
+            JOIN courses c ON t.course_id = c.id
+            ORDER BY q.created_at DESC
+        ");
+        return $stmt->fetchAll();
+    }
+
+    // topics where students are struggling: counts DISTINCT students scoring
+    // below threshold on that topic's quizzes
+    public function getSystemWideWeakTopics(float $threshold = 70.0): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("
+            SELECT t.title AS name,
+                   COUNT(DISTINCT CASE WHEN qa.score < :threshold THEN qa.student_id END) AS count
+            FROM quiz_attempts qa
+            JOIN quizzes q ON qa.quiz_id = q.id
+            JOIN topics t ON q.topic_id = t.id
+            GROUP BY t.id, t.title
+            HAVING count > 0
+            ORDER BY count DESC
+        ");
+        $stmt->bindValue(':threshold', $threshold);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    // average score per week, most recent 12 weeks
+    public function getScoreTrendByWeek(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("
+            SELECT
+                DATE_FORMAT(MIN(completed_at), '%b %e') AS period,
+                ROUND(AVG(score), 2) AS averageScore
+            FROM quiz_attempts
+            WHERE completed_at >= (NOW() - INTERVAL 12 WEEK)
+            GROUP BY YEARWEEK(completed_at)
+            ORDER BY YEARWEEK(completed_at) ASC
+        ");
+        return $stmt->fetchAll();
+    }
 }

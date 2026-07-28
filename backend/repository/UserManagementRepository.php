@@ -191,4 +191,51 @@ class UserManagementRepository {
         $stmt->execute();
         return $stmt->fetchAll();
     }
+
+    // create a brand-new user account + matching role-specific row
+    // role-specific ID follows the same pattern as createAdmin(): PREFIX + 5-digit padded user id
+    public function createUser(string $name, string $email, string $passwordHash, string $role): int {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, role) VALUES (:name, :email, :password_hash, :role)");
+        $stmt->execute([
+            ':name' => $name,
+            ':email' => $email,
+            ':password_hash' => $passwordHash,
+            ':role' => $role
+        ]);
+        $userId = (int) $pdo->lastInsertId();
+
+        $prefix = ['student' => 'STU', 'lecturer' => 'LEC', 'admin' => 'ADMIN'][$role];
+        $roleId = $prefix . str_pad($userId, 5, '0', STR_PAD_LEFT);
+
+        switch ($role) {
+            case 'student':
+                $stmt = $pdo->prepare("INSERT INTO students (id, student_id, intake) VALUES (:id, :role_id, CURDATE())");
+                break;
+            case 'lecturer':
+                $stmt = $pdo->prepare("INSERT INTO lecturers (id, lecturer_id) VALUES (:id, :role_id)");
+                break;
+            case 'admin':
+                $stmt = $pdo->prepare("INSERT INTO admins (id, admin_id) VALUES (:id, :role_id)");
+                break;
+        }
+        $stmt->execute([':id' => $userId, ':role_id' => $roleId]);
+
+        return $userId;
+    }
+
+    // updates the shared users table only (name/email).
+    // NOTE: role is not editable here — see updateUserAccount() in UserManagementLogic.php.
+    public function updateUserBasic(int $userId, string $name, string $email): bool {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("UPDATE users SET name = :name, email = :email WHERE id = :id");
+        return $stmt->execute([':name' => $name, ':email' => $email, ':id' => $userId]);
+    }
+
+    // deleting from users cascades to students/lecturers/admins (ON DELETE CASCADE in schema)
+    public function deleteUserById(int $userId): bool {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
+        return $stmt->execute([':id' => $userId]);
+    }
 }

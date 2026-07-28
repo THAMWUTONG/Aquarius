@@ -5,13 +5,14 @@ import Modal from "../components/Modal.jsx"
 import ConfirmDialog from "../components/ConfirmDialog.jsx"
 import Toast from "../components/Toast.jsx"
 import Badge from "../components/Badge.jsx"
-import { useRoleGuard } from "../hooks/useRoleGuard.jsx"
+import { useAuth } from "../context/AuthContext.jsx"
+import { useNavigate } from "react-router"
 import { fetchUsers, createUser, updateUser, deleteUser } from "../services/userService.jsx"
 import { FaPlus, FaEye, FaPen, FaTrash } from "react-icons/fa"
 
 // NOTE: role values must match whatever is stored in the `users.role` column.
-// Sidebar.jsx currently checks "teacher" while Login.jsx routes based on
-// "lecturer" — confirm which one is authoritative before wiring the backend.
+// Sidebar.jsx currently checks "teacher" while the DB schema's role ENUM
+// uses "lecturer" — confirm which one is authoritative before wiring the backend.
 const ROLE_OPTIONS = ["student", "teacher", "admin"];
 
 /**
@@ -33,7 +34,8 @@ function deriveUserStatus(lastAccess) {
  * Admin page for managing user accounts: search/filter, add, view, edit, delete.
  */
 function ManageUsers() {
-  const { user, isAuthorized } = useRoleGuard(["admin"])
+  const { user } = useAuth()
+  const navigate = useNavigate()
 
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,9 +51,15 @@ function ManageUsers() {
   const [deletingUser, setDeletingUser] = useState(null)
 
   useEffect(() => {
-    if (!isAuthorized) return
+    if (!user || user.role !== "admin") {
+      navigate("/")
+    }
+  }, [user, navigate])
+
+  useEffect(() => {
+    if (!user || user.role !== "admin") return
     loadUsers()
-  }, [isAuthorized])
+  }, [user])
 
   /**
    * Loads (or reloads) the user list from the server.
@@ -132,129 +140,132 @@ function ManageUsers() {
     }
   }
 
-  if (!isAuthorized) return null
+  if (!user || user.role !== "admin") {
+    return null;
+  }
+  else {
+    const filteredUsers = getFilteredUsers(users)
 
-  const filteredUsers = getFilteredUsers(users)
+    return (
+      <div className="flex min-h-screen flex-row bg-gray-100">
+        <Sidebar />
+        <main className="flex min-w-0 flex-1 flex-col">
+          <HeaderBar displayedTitle="Manage Users" userName={user.name} userRole={user.role} />
 
-  return (
-    <div className="flex min-h-screen flex-row bg-gray-100">
-      <Sidebar />
-      <main className="flex min-w-0 flex-1 flex-col">
-        <HeaderBar displayedTitle="Manage Users" userName={user.name} userRole={user.role} />
+          <div className="space-y-4 p-8">
+            {error && (
+              <div className="rounded-lg p-4 text-sm text-red-600 bg-red-50 ring ring-red-200">
+                Failed to load users: {error}
+              </div>
+            )}
 
-        <div className="space-y-4 p-8">
-          {error && (
-            <div className="rounded-lg p-4 text-sm text-red-600 bg-red-50 ring ring-red-200">
-              Failed to load users: {error}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-3">
+                <input
+                  className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  type="text"
+                />
+                <select
+                  className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="all">All Roles</option>
+                  {ROLE_OPTIONS.map((role) => (
+                    <option key={role} value={role}>{role}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-sky-500 transition-all hover:bg-sky-600"
+                onClick={() => setIsAddOpen(true)}
+                type="button"
+              >
+                <FaPlus /> Add User
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl bg-white ring ring-gray-300">
+              <table className="w-full text-left text-sm">
+                <thead className="text-gray-500 bg-gray-50">
+                  <tr>
+                    <th className="p-4">Name</th>
+                    <th className="p-4">Email</th>
+                    <th className="p-4">Role</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/*
+                    Three render states for the table body, in priority order:
+                    1. loading    → show a loading row
+                    2. no matches → show an empty-state row (either no users at all, or the current search/filter matched nothing)
+                    3. populated  → render one row per filtered user
+                  */}
+                  {loading ? (
+                    <tr><td className="p-4 text-gray-400" colSpan={5}>Loading users...</td></tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr><td className="p-4 text-gray-400" colSpan={5}>No users match your search.</td></tr>
+                  ) : (
+                    filteredUsers.map((u) => (
+                      <tr key={u.id} className="border-t border-gray-200 hover:bg-gray-50">
+                        <td className="p-4">{u.name}</td>
+                        <td className="p-4">{u.email}</td>
+                        <td className="p-4 capitalize">{u.role}</td>
+                        <td className="p-4"><Badge status={deriveUserStatus(u.last_access)} /></td>
+                        <td className="p-4">
+                          <div className="flex gap-3 text-gray-500">
+                            <button aria-label="View user" onClick={() => setViewingUser(u)} type="button"><FaEye /></button>
+                            <button aria-label="Edit user" onClick={() => setEditingUser(u)} type="button"><FaPen /></button>
+                            <button aria-label="Delete user" onClick={() => setDeletingUser(u)} className="hover:text-red-500" type="button"><FaTrash /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+
+        <Modal isOpen={isAddOpen} title="Add User" onClose={() => setIsAddOpen(false)}>
+          <UserForm onSubmit={handleAddUser} onCancel={() => setIsAddOpen(false)} />
+        </Modal>
+
+        <Modal isOpen={!!editingUser} title="Edit User" onClose={() => setEditingUser(null)}>
+          {editingUser && (
+            <UserForm initialValues={editingUser} onSubmit={handleEditUser} onCancel={() => setEditingUser(null)} />
+          )}
+        </Modal>
+
+        <Modal isOpen={!!viewingUser} title="User Details" onClose={() => setViewingUser(null)}>
+          {viewingUser && (
+            <div className="space-y-2 text-sm">
+              <p><span className="font-semibold">Name:</span> {viewingUser.name}</p>
+              <p><span className="font-semibold">Email:</span> {viewingUser.email}</p>
+              <p><span className="font-semibold">Role:</span> {viewingUser.role}</p>
+              <p><span className="font-semibold">Last Access:</span> {viewingUser.last_access || "Never"}</p>
             </div>
           )}
+        </Modal>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-3">
-              <input
-                className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                placeholder="Search by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                type="text"
-              />
-              <select
-                className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-              >
-                <option value="all">All Roles</option>
-                {ROLE_OPTIONS.map((role) => (
-                  <option key={role} value={role}>{role}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white bg-sky-500 transition-all hover:bg-sky-600"
-              onClick={() => setIsAddOpen(true)}
-              type="button"
-            >
-              <FaPlus /> Add User
-            </button>
-          </div>
+        <ConfirmDialog
+          isOpen={!!deletingUser}
+          title="Delete User?"
+          message={`This will permanently remove ${deletingUser?.name}'s account. This cannot be undone.`}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeletingUser(null)}
+        />
 
-          <div className="overflow-x-auto rounded-xl bg-white ring ring-gray-300">
-            <table className="w-full text-left text-sm">
-              <thead className="text-gray-500 bg-gray-50">
-                <tr>
-                  <th className="p-4">Name</th>
-                  <th className="p-4">Email</th>
-                  <th className="p-4">Role</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {/*
-                  Three render states for the table body, in priority order:
-                  1. loading    → show a loading row
-                  2. no matches → show an empty-state row (either no users at all, or the current search/filter matched nothing)
-                  3. populated  → render one row per filtered user
-                */}
-                {loading ? (
-                  <tr><td className="p-4 text-gray-400" colSpan={5}>Loading users...</td></tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr><td className="p-4 text-gray-400" colSpan={5}>No users match your search.</td></tr>
-                ) : (
-                  filteredUsers.map((u) => (
-                    <tr key={u.id} className="border-t border-gray-200 hover:bg-gray-50">
-                      <td className="p-4">{u.name}</td>
-                      <td className="p-4">{u.email}</td>
-                      <td className="p-4 capitalize">{u.role}</td>
-                      <td className="p-4"><Badge status={deriveUserStatus(u.last_access)} /></td>
-                      <td className="p-4">
-                        <div className="flex gap-3 text-gray-500">
-                          <button aria-label="View user" onClick={() => setViewingUser(u)} type="button"><FaEye /></button>
-                          <button aria-label="Edit user" onClick={() => setEditingUser(u)} type="button"><FaPen /></button>
-                          <button aria-label="Delete user" onClick={() => setDeletingUser(u)} className="hover:text-red-500" type="button"><FaTrash /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-
-      <Modal isOpen={isAddOpen} title="Add User" onClose={() => setIsAddOpen(false)}>
-        <UserForm onSubmit={handleAddUser} onCancel={() => setIsAddOpen(false)} />
-      </Modal>
-
-      <Modal isOpen={!!editingUser} title="Edit User" onClose={() => setEditingUser(null)}>
-        {editingUser && (
-          <UserForm initialValues={editingUser} onSubmit={handleEditUser} onCancel={() => setEditingUser(null)} />
-        )}
-      </Modal>
-
-      <Modal isOpen={!!viewingUser} title="User Details" onClose={() => setViewingUser(null)}>
-        {viewingUser && (
-          <div className="space-y-2 text-sm">
-            <p><span className="font-semibold">Name:</span> {viewingUser.name}</p>
-            <p><span className="font-semibold">Email:</span> {viewingUser.email}</p>
-            <p><span className="font-semibold">Role:</span> {viewingUser.role}</p>
-            <p><span className="font-semibold">Last Access:</span> {viewingUser.last_access || "Never"}</p>
-          </div>
-        )}
-      </Modal>
-
-      <ConfirmDialog
-        isOpen={!!deletingUser}
-        title="Delete User?"
-        message={`This will permanently remove ${deletingUser?.name}'s account. This cannot be undone.`}
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeletingUser(null)}
-      />
-
-      {toast && <Toast type={toast.type} message={toast.message} onDismiss={() => setToast(null)} />}
-    </div>
-  )
+        {toast && <Toast type={toast.type} message={toast.message} onDismiss={() => setToast(null)} />}
+      </div>
+    )
+  }
 }
 
 /**
@@ -276,7 +287,6 @@ function UserForm({ initialValues, onSubmit, onCancel }) {
    */
   function handleSubmit(e) {
     e.preventDefault()
-    // Input validation: catch empty/invalid fields before calling onSubmit.
     if (!name.trim() || !email.trim()) {
       setFormError("Name and email are required.")
       return

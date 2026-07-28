@@ -1,10 +1,5 @@
-/**
- * Fetches all audit log entries.
- * @returns {Promise<Array>} Resolves with an array of { timestamp, actor, action }.
- * @throws {Error} If the request fails.
- */
 export async function fetchAuditLogs() {
-  const response = await fetch('/api/audit-logs.php', {
+  const response = await fetch('/api/UserManagement.php?action=audit-logs', {
     method: 'GET',
     credentials: 'include',
   });
@@ -12,5 +7,5 @@ export async function fetchAuditLogs() {
   if (!response.ok) {
     throw new Error(data.message || 'Failed to load audit logs');
   }
-  return data;
+  return data.map((log) => ({ timestamp: log.performed_at, actor: log.admin_name, action: log.action }));
 }
