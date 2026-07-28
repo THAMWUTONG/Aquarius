@@ -1,13 +1,13 @@
 import Sidebar from "../components/Sidebar.jsx"
 import HeaderBar from "../components/HeaderBar.jsx"
-import { useNavigate } from "react-router"
 import { useAuth } from "../context/AuthContext.jsx"
+import { useNavigate } from "react-router"
 import { useEffect } from "react"
 import StudyMaterialCard from "../components/StudyMaterialCard.jsx"
 
 function StudyMaterials(){
-  const navigate = useNavigate()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!user || user.role !== "student") {

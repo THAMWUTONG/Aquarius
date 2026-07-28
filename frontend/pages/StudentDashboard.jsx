@@ -5,7 +5,7 @@ import { NavLink, useNavigate } from "react-router"
 import { useEffect, useState } from "react"
 import { FaBookOpen, FaCalendar, FaExclamationTriangle, FaGraduationCap, FaRegCalendar } from "react-icons/fa";
 import DashboardStatisticCard from "../components/DashboardStatisticCard.jsx"
-import { getStudentDashboardData } from "../services/getStudentDashboardData.jsx"
+import { getStudentDashboardData } from "../services/getStudentDashboardDataService.jsx"
 import StudentDashboardUpcomingEvent from "../components/StudentDashboardUpcomingEvent.jsx"
 import StudentDashboardWeakTopics from "../components/StudentDashboardWeakTopics.jsx"
 

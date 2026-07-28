@@ -1,7 +1,7 @@
 import Sidebar from "../components/Sidebar.jsx"
 import HeaderBar from "../components/HeaderBar.jsx"
-import { useNavigate } from "react-router"
 import { useAuth } from "../context/AuthContext.jsx"
+import { useNavigate } from "react-router"
 import { useEffect } from "react"
 import { FaChartBar, FaChartLine, FaClipboardList } from "react-icons/fa"
 import CourseProgress from "../components/CourseProgress.jsx"
@@ -9,8 +9,8 @@ import ScoreHistoryEntry from "../components/ScoreHistoryEntry.jsx"
 import ImprovementTrend from "../components/ImprovementTrend.jsx"
 
 function PerformanceOverview(){
-  const navigate = useNavigate()
   const { user } = useAuth()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!user || user.role !== "student") {

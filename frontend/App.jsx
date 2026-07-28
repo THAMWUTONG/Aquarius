@@ -16,7 +16,7 @@ function App() {
       <Route path="/student-dashboard" element={<StudentDashboard />} />
       <Route path="/study-materials" element={<StudyMaterials />} />
       <Route path="/take-quizzes" element={<TakeQuizzes />} />
-      <Route path="/performance-overview" element={<PerformanceOverview/>} />
+      <Route path="/performance-overview" element={<PerformanceOverview />} />
       <Route path="/study-calendar" element={<StudyCalendar />} />
       <Route path="/profile" element={<Profile />} />
     </Routes>

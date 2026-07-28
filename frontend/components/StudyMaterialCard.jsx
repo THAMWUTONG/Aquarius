@@ -9,7 +9,7 @@ function StudyMaterialCard({ courseName, title, topicName, description, type, in
   }
 
   return (
-    <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4">
+    <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
       <div className="flex justify-between items-center">
         <p className="p-1 rounded-lg text-sm text-sky-500 bg-sky-100">{courseName}</p>
         <div className="flex gap-2">
@@ -18,7 +18,7 @@ function StudyMaterialCard({ courseName, title, topicName, description, type, in
         </div>
       </div>
       <div>
-        <h2 className="text-base font-bold">{title}</h2>
+        <h2 className="font-bold">{title}</h2>
         <p className="text-xs text-gray-400">Topic: {topicName}</p>
       </div>
       <p className="text-sm">{description}</p>
