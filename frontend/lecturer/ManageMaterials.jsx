@@ -4,12 +4,14 @@ import HeaderBar from '../components/HeaderBar.jsx';
 import { FaPlus, FaLink, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import UploadMaterialModal from './UploadMaterials.jsx';
 
+// Data mapped directly from materials -> topics -> courses DB tables
 const materialsData = [
   {
     id: 1,
     title: 'Python Variables Slides',
     description: 'Lecture slides for variables and data types.',
-    topic: 'Topic 1', // Maps to topic_id: 1
+    course: 'Introduction to Programming', // course_id: 1
+    topic: 'Variables & Data Types',       // topic_id: 1
     type: 'SLIDES',
     prerequisites: '—',
   },
@@ -17,7 +19,8 @@ const materialsData = [
     id: 2,
     title: 'Control Flow Video',
     description: 'Video walkthrough of Python control flow.',
-    topic: 'Topic 2', // Maps to topic_id: 2
+    course: 'Introduction to Programming', // course_id: 1
+    topic: 'If-else, loops, and logical operators', // topic_id: 2
     type: 'VIDEO',
     prerequisites: '1 topics',
   },
@@ -25,7 +28,8 @@ const materialsData = [
     id: 3,
     title: 'Functions Cheat Sheet',
     description: 'Quick reference for Python functions.',
-    topic: 'Topic 3', // Maps to topic_id: 3
+    course: 'Introduction to Programming', // course_id: 1
+    topic: 'Defining reusable functions',   // topic_id: 3
     type: 'PDF',
     prerequisites: '1 topics',
   },
@@ -33,7 +37,8 @@ const materialsData = [
     id: 4,
     title: 'Linked Lists Document',
     description: 'Comprehensive notes on linked list operations.',
-    topic: 'Topic 4', // Maps to topic_id: 4
+    course: 'Data Structures & Algorithms', // course_id: 2
+    topic: 'Linear data structures',        // topic_id: 4
     type: 'DOCUMENT',
     prerequisites: '—',
   },
@@ -41,7 +46,8 @@ const materialsData = [
     id: 5,
     title: 'Sorting Algorithms Video',
     description: 'Step-by-step visual explanation of sorting algorithms.',
-    topic: 'Topic 5', // Maps to topic_id: 5
+    course: 'Data Structures & Algorithms', // course_id: 2
+    topic: 'Bubble, merge, quick sort',     // topic_id: 5
     type: 'VIDEO',
     prerequisites: '1 topics',
   },
@@ -49,7 +55,8 @@ const materialsData = [
     id: 6,
     title: 'ER Diagram Tutorial',
     description: 'How to draw ER diagrams with examples.',
-    topic: 'Topic 6', // Maps to topic_id: 6
+    course: 'Database Systems',             // course_id: 3
+    topic: 'ER Modelling',                  // topic_id: 6
     type: 'PDF',
     prerequisites: '—',
   },
@@ -57,7 +64,8 @@ const materialsData = [
     id: 7,
     title: 'SQL Query Practice Set',
     description: 'Practice SQL exercises with solutions.',
-    topic: 'Topic 7', // Maps to topic_id: 7
+    course: 'Database Systems',             // course_id: 3
+    topic: 'SQL Queries',                   // topic_id: 7
     type: 'PDF',
     prerequisites: '1 topics',
   },
@@ -127,6 +135,7 @@ function ManageMaterials() {
                   <thead>
                     <tr className="border-b border-slate-200 bg-slate-50/50 text-[11px] font-bold text-slate-400 tracking-wider uppercase">
                       <th className="py-4 px-6">Material Title</th>
+                      <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Type</th>
                       <th className="py-4 px-6 text-center">Prerequisites</th>
@@ -139,6 +148,11 @@ function ManageMaterials() {
                         {/* Title */}
                         <td className="py-4 px-6 font-semibold text-slate-800">
                           {item.title}
+                        </td>
+
+                        {/* Course */}
+                        <td className="py-4 px-6 text-slate-700 font-medium">
+                          {item.course}
                         </td>
 
                         {/* Topic */}
