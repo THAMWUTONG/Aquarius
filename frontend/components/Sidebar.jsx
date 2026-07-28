@@ -4,9 +4,10 @@ import SidebarNavItems from "./SidebarNavItems.jsx"
 import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
 
 function Sidebar() {
-  const { user } = useAuth()
+  const { user } = useAuth();
 
   function renderNavigationItems(user) {
+    console.log("current role: " + user?.role);
     if (user && user.role === "student") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -20,7 +21,7 @@ function Sidebar() {
         </nav>
       )
     }
-    else if (user && user.role === "lecturer") {
+    else if (user && user.role === "teacher") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           
@@ -30,7 +31,14 @@ function Sidebar() {
     else if (user && user.role === "admin") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          
+          <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/admin-dashboard" />
+          <SidebarNavItems displayedText="Manage Users" icon={ <FaUsersCog /> } href="/manage-users" />
+          <SidebarNavItems displayedText="Platform Statistics" icon={ <FaChartBar /> } href="/platform-statistics" />
+          <SidebarNavItems displayedText="Platform Regulation" icon={ <FaShieldAlt /> } href="/platform-regulation" />
+          <SidebarNavItems displayedText="Manage Enrollment" icon={ <FaUserGraduate /> } href="/manage-enrollment" />
+          <SidebarNavItems displayedText="Audit Log" icon={ <FaHistory /> } href="/audit-log" />
+          <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/profile" />
+          <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
 
       )

@@ -7,6 +7,13 @@ import TakeQuizzes from "./pages/TakeQuizzes.jsx"
 import PerformanceOverview from "./pages/PerformanceOverview.jsx"
 import StudyCalendar from "./pages/StudyCalendar.jsx"
 import Profile from "./pages/Profile.jsx"
+import AdminDashboard from "./pages/AdminDashboard.jsx"
+import ManageUsers from "./pages/ManageUsers.jsx"
+import PlatformStatistics from "./pages/PlatformStatistics.jsx"
+import PlatformRegulation from "./pages/PlatformRegulation.jsx"
+import ManageEnrollment from "./pages/ManageEnrollment.jsx"
+import AuditLog from "./pages/AuditLog.jsx"
+
 
 function App() {
   return (
@@ -19,6 +26,12 @@ function App() {
       <Route path="/performance-overview" element={<PerformanceOverview/>} />
       <Route path="/study-calendar" element={<StudyCalendar />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      <Route path="/manage-users" element={<ManageUsers />} />
+      <Route path="/platform-statistics" element={<PlatformStatistics />} />
+      <Route path="/platform-regulation" element={<PlatformRegulation />} />
+      <Route path="/manage-enrollment" element={<ManageEnrollment />} />
+      <Route path="/audit-log" element={<AuditLog />} />
     </Routes>
   )
 }
