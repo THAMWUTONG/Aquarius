@@ -1,29 +1,57 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
-import Sidebar from '../components/Sidebar.jsx'; // Using your updated global Sidebar
+import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import StatCard from '../components/StatCard.jsx';
 import RosterTable from '../components/RoasterTable.jsx';
 import ShortcutCard from '../components/ShortcutCard.jsx';
 import SidebarNavItems from '../components/SidebarNavItems.jsx';
 
+// Updated stat counts based on database records
 const statsData = [
-  { id: 1, label: 'Enrolled Students', value: 15, iconClass: 'fas fa-users', color: 'text-blue-500', bgColor: 'bg-blue-50' },
-  { id: 2, label: 'Total Quizzes', value: 7, iconClass: 'fas fa-award', color: 'text-purple-500', bgColor: 'bg-purple-50' },
-  { id: 3, label: 'Materials Uploaded', value: 16, iconClass: 'fas fa-folder-plus', color: 'text-emerald-500', bgColor: 'bg-emerald-50' },
-  { id: 4, label: 'Student Reviews', value: 4, iconClass: 'fas fa-comment-alt', color: 'text-rose-500', bgColor: 'bg-rose-50' },
+  { id: 1, label: 'Enrolled Students', value: 5, iconClass: 'fas fa-users', color: 'text-blue-500', bgColor: 'bg-blue-50' },
+  { id: 2, label: 'Total Quizzes', value: 5, iconClass: 'fas fa-award', color: 'text-purple-500', bgColor: 'bg-purple-50' },
+  { id: 3, label: 'Materials Uploaded', value: 7, iconClass: 'fas fa-folder-plus', color: 'text-emerald-500', bgColor: 'bg-emerald-50' },
+  { id: 4, label: 'Student Reviews', value: 2, iconClass: 'fas fa-comment-alt', color: 'text-rose-500', bgColor: 'bg-rose-50' },
 ];
 
+// Mapped directly from the students database table (id 2 to 6 / ST000002 - ST000006)
 const studentsData = [
-  { name: 'Alex Tan', email: 'alex.tan@aquarius.demo', classes: 'CS101, CS202, MA101', lastActive: '2026-07-18' },
-  { name: 'Beatrice Ng', email: 'beatrice.ng@aquarius.demo', classes: 'CS101, CS204', lastActive: '2026-07-19' },
-  { name: 'Charlie Koh', email: 'charlie.koh@aquarius.demo', classes: 'CS202, CS204', lastActive: '2026-07-17' },
-  { name: 'David Lee', email: 'david.lee@aquarius.demo', classes: 'MA101, CS204', lastActive: '2026-07-14' },
-  { name: 'Emily Tan', email: 'emily.tan@aquarius.demo', classes: 'CS101, CS202', lastActive: '2026-07-18' },
-  { name: 'Fiona Chan', email: 'fiona.chan@aquarius.demo', classes: 'CS101, MA101', lastActive: '2026-07-16' },
-  { name: 'George Wong', email: 'george.wong@aquarius.demo', classes: 'CS202, MA101', lastActive: '2026-07-12' },
-  { name: 'Hannah Lim', email: 'hannah.lim@aquarius.demo', classes: 'CS204', lastActive: '2026-07-19' },
-  { name: 'Ian Teh', email: 'ian.teh@aquarius.demo', classes: 'CS101, CS202, CS204', lastActive: '2026-07-15' },
+  { 
+    studentId: 'ST000002', 
+    name: 'Alex Tan', 
+    email: 'alex.tan@aquarius.demo', 
+    programme: 'Bachelor of Computer Science', 
+    intake: '2025-09-01'
+  },
+  { 
+    studentId: 'ST000003', 
+    name: 'Beatrice Ng', 
+    email: 'beatrice.ng@aquarius.demo', 
+    programme: 'Bachelor of Information Technology', 
+    intake: '2025-09-01'
+  },
+  { 
+    studentId: 'ST000004', 
+    name: 'Charlie Koh', 
+    email: 'charlie.koh@aquarius.demo', 
+    programme: 'Bachelor of Software Engineering', 
+    intake: '2026-01-15'
+  },
+  { 
+    studentId: 'ST000005', 
+    name: 'David Lee', 
+    email: 'david.lee@aquarius.demo', 
+    programme: 'Bachelor of Computer Science', 
+    intake: '2026-01-15'
+  },
+  { 
+    studentId: 'ST000006', 
+    name: 'Emily Tan', 
+    email: 'emily.tan@aquarius.demo', 
+    programme: 'Diploma in Data Science', 
+    intake: '2026-05-01'
+  },
 ];
 
 const shortcutsData = [
@@ -34,7 +62,6 @@ const shortcutsData = [
 
 function LecturerDashboard() {
   const { user } = useAuth();
-
 
   return (
     <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
