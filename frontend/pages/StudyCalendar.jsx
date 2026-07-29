@@ -2,12 +2,26 @@ import HeaderBar from "../components/HeaderBar.jsx"
 import Sidebar from "../components/Sidebar.jsx"
 import { useAuth } from "../context/AuthContext.jsx"
 import { useNavigate } from "react-router"
-import { useEffect } from "react"
-import { FaCalendarAlt } from "react-icons/fa"
+import { useEffect, useState } from "react"
+import StudentStudyCalendar from "../components/StudentStudyCalendar.jsx"
+import { FaTimes } from "react-icons/fa"
 
 function StudyCalendar(){
   const { user } = useAuth()
   const navigate = useNavigate()
+  const [isMarkEventOpen, setIsMarkEventOpen] = useState(false)
+  const [isGenerateScheduleOpen, setIsGenerateScheduleOpen] = useState(false)
+  const [freeDates, setFreeDates] = useState([""])
+
+  function addFreeDate() {
+    setFreeDates(prev => [...prev, ""])
+  }
+  function updateFreeDate(index, newValue) {
+    setFreeDates(prev => prev.map((currentDate, i) => i === index ? newValue : currentDate)) // if index matches, change old date to new date
+  }
+  function deleteFreeDate(index) {
+    setFreeDates(prev => prev.filter((_ , i) => i !== index)) // match any date that isnt the removed date
+  }
 
   useEffect(() => {
     if (!user || user.role !== "student") {
@@ -25,18 +39,76 @@ function StudyCalendar(){
         <main className="flex-1 min-w-0 flex flex-col">
           <HeaderBar displayedTitle="Study Calendar" userName={ user.name } userRole={ user.role } />
           <div className="flex-1 p-8 overflow-y-auto space-y-6">
-            <div className="flex justify-end w-full">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500">&#43; Mark Important Events</button>
+            <div className="flex justify-end gap-2">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsMarkEventOpen(true)}>&#43; Mark Important Events</button>
+              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsGenerateScheduleOpen(true)}>Generate Study Schedule</button>
             </div>
-            <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4">
-              <div className="flex items-center gap-2">
-                <FaCalendarAlt className="text-sky-500"/>
-                <h2 className="text-lg font-bold"></h2>
-              </div>
-              <hr className="text-gray-300"></hr>
+            <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+              <StudentStudyCalendar />
             </div>
           </div>
         </main>
+
+        {isMarkEventOpen && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black/50">
+            <div className="w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold">Add New Event</h2>
+                <button onClick={() => setIsMarkEventOpen(false)}><FaTimes /></button>
+              </div>
+              <hr className="text-gray-300"></hr>
+              <form className="space-y-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm" htmlFor="title">Event Title</label>
+                  <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="title" type="text" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm" htmlFor="date">Date</label>
+                  <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="date" type="date" min={new Date().toISOString().split("T")[0]} />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm" htmlFor="type">Event Type</label>
+                  <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="type" type="text" />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button className="px-4 py-2 border border-gray-300 rounded-lg font-bold hover:bg-gray-100" onClick={() => setIsMarkEventOpen(false)}>Cancel</button>
+                  <button className="px-4 py-2 rounded-lg font-bold text-white bg-sky-500 hover:bg-sky-600">Add Event</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+        {isGenerateScheduleOpen && (
+          <div className="fixed inset-0 flex justify-center items-center bg-black/50">
+            <div className="w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-bold">Generate Study Schedule</h2>
+                <button onClick={() => setIsGenerateScheduleOpen(false)}><FaTimes /></button>
+              </div>
+              <hr className="text-gray-300"></hr>
+              <form className="space-y-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm">On what days will you be free?</label>
+                  <div className="space-y-2">
+                    {freeDates.map((date, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500"  type="date" value={date} min={new Date().toISOString().split("T")[0]} onChange={e => freeDates.includes(e.target.value) ? alert("Date already selected. Select another date.") : updateFreeDate(index, e.target.value)}/>
+                        {freeDates.length > 1 && (
+                          <button type="button" onClick={() => deleteFreeDate(index)}><FaTimes /></button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button className="text-sm text-sky-500 hover:text-sky-600 text-left" type="button" onClick={addFreeDate}>Add Date</button>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button className="px-4 py-2 border border-gray-300 rounded-lg font-bold hover:bg-gray-100" onClick={() => setIsGenerateScheduleOpen(false)}>Cancel</button>
+                  <button className="px-4 py-2 rounded-lg font-bold text-white bg-sky-500 hover:bg-sky-600">Generate</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     )
   }

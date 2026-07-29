@@ -45,7 +45,7 @@ function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList 
   }
 
   return (
-    <div className="absolute flex justify-center items-center min-w-screen min-h-screen bg-black/50">
+    <div className="fixed inset-0 flex justify-center items-center bg-black/50">
       <div className="max-w-2xl mx-auto border border-gray-300 rounded-xl shadow-md bg-white">
         <div className="flex justify-between items-center p-4 rounded-t-xl text-white bg-sky-500">
           <div>
