@@ -1,5 +1,5 @@
 export async function getQuizData() {
-  const response = await fetch('/api/StQuiz.php');
+  const response = await fetch('/api/StQuizzes.php');
 
   const data = await response.json();
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { submitQuizAnswers } from "../services/submitQuizAnswersService.jsx"
 
 /**
  * Displays a dialog for students to answer questions in a quiz.
@@ -7,18 +8,17 @@ import { useState, useEffect } from "react"
  * @param quizTopic the topic of the quiz.
  * @param durationInMinutes the time limit of the quiz, in minutes.
  * @param questionList the list of questions contained within the quiz.
+ * @param quizId the id of the quiz being attempted.
  */
-function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList }) {
+function QuestionDialog({ quizId, quizTitle, quizTopic, durationInMinutes, questionList, onClose }) {
   const [timeLeft, setTimeLeft] = useState(durationInMinutes * 60)
-  const timeLeftMinutesPart = Math.floor(timeLeft / 60).toString.padStart(2, "0")
-  const timeLeftSecondsPart = (timeLeft % 60).toString.padStart(2, "0")
+  const [submitting, setSubmitting] = useState(false)
+  const timeLeftMinutesPart = String(Math.floor(timeLeft / 60)).padStart(2, "0")
+  const timeLeftSecondsPart = String(timeLeft % 60).padStart(2, "0")
 
   useEffect(() => {
-    // Set an timer that counts down every 1000 miliseconds.
-    // Runs cleanup after component unmounts/timer runs out.
-    // Runs submission after timer runs out.
     const timer = setInterval(() => {
-      setTimeLeft(prev => {
+      setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer)
           document.getElementById("quizAttempt").requestSubmit()
@@ -33,8 +33,9 @@ function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList 
     }
   }, [])
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
+    setSubmitting(true)
     const quizForm = e.target
     const formData = new FormData(quizForm)
 
@@ -42,6 +43,15 @@ function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList 
       questionId: question.id,
       selected: formData.get(`question-${question.id}`)
     }))
+
+    try {
+      await submitQuizAnswers(quizId, answers)
+      onClose?.()
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -55,7 +65,7 @@ function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList 
           <p>{timeLeftMinutesPart}:{timeLeftSecondsPart}</p>
         </div>
         <form id="quizAttempt" onSubmit={handleSubmit}>
-          <div className="p-6 space-y-4 overflow-auto">
+          <div className="max-h-96 p-6 space-y-4 overflow-auto">
             {questionList.map((question, index) => (
               <div key={question.id}>
                 <div className="space-y-2">
@@ -84,7 +94,9 @@ function QuestionDialog({ quizTitle, quizTopic, durationInMinutes, questionList 
             ))}
           </div>
           <div className="flex justify-end items-center p-4 rounded-b-xl text-white bg-sky-500">
-            <button className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 transition-all" type="submit">Submit Answers</button>
+            <button className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 transition-all" type="submit" disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Submit Answers'}
+            </button>
           </div>
         </form>
       </div>

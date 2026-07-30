@@ -99,11 +99,11 @@ function StudyCalendar(){
                       </div>
                     ))}
                   </div>
-                  <button className="text-sm text-sky-500 hover:text-sky-600 text-left" type="button" onClick={addFreeDate}>Add Date</button>
+                  <button className="text-sm text-sky-500 hover:text-sky-600 text-left transition-all" type="button" onClick={addFreeDate}>Add Date</button>
                 </div>
                 <div className="flex justify-end gap-2">
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg font-bold hover:bg-gray-100" onClick={() => setIsGenerateScheduleOpen(false)}>Cancel</button>
-                  <button className="px-4 py-2 rounded-lg font-bold text-white bg-sky-500 hover:bg-sky-600">Generate</button>
+                  <button className="px-4 py-2 border border-gray-300 rounded-lg font-bold hover:bg-gray-100 transition-all" onClick={() => setIsGenerateScheduleOpen(false)}>Cancel</button>
+                  <button className="px-4 py-2 rounded-lg font-bold text-white bg-sky-500 hover:bg-sky-600 transition-all">Generate</button>
                 </div>
               </form>
             </div>

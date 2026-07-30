@@ -4,13 +4,18 @@ import { useAuth } from "../context/AuthContext.jsx"
 import { useNavigate } from "react-router"
 import { useEffect, useState } from "react"
 import QuizCard from "../components/QuizCard.jsx"
+import QuestionDialog from "../components/QuestionDialog.jsx"
 import { getQuizData } from "../services/getQuizService.jsx"
+import { getQuizQuestions } from "../services/getQuizQuestionsService.jsx"
 
 function TakeQuizzes(){
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [loading, setLoading] = useState(false)
-  const [quizData, setQuizData] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [quizData, setQuizData] = useState([])
+  const [selectedQuiz, setSelectedQuiz] = useState(null)
+  const [questionList, setQuestionList] = useState([])
+  const [showQuestionDialog, setShowQuestionDialog] = useState(false)
 
   useEffect(() => {
     if (!user || user.role !== "student") {
@@ -21,8 +26,9 @@ function TakeQuizzes(){
   useEffect(() => {
     async function fetchQuizData() {
       try {
-        const quizData = await getQuizData()
-        setQuizData(quizData)
+        setLoading(true)
+        const data = await getQuizData()
+        setQuizData(data.quizzes || [])
       }
       catch (error) {
         alert(error.message)
@@ -35,7 +41,27 @@ function TakeQuizzes(){
     fetchQuizData()
   }, [user])
 
-  if (!user || user.role !== "student" || loading) {
+  async function handleStartQuiz(quiz) {
+    try {
+      setLoading(true)
+      const questions = await getQuizQuestions(quiz.id)
+      setSelectedQuiz(quiz)
+      setQuestionList(questions || [])
+      setShowQuestionDialog(true)
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function closeQuestionDialog() {
+    setShowQuestionDialog(false)
+    setSelectedQuiz(null)
+    setQuestionList([])
+  }
+
+  if (!user || user.role !== "student") {
     return null;
   }
 
@@ -45,11 +71,25 @@ function TakeQuizzes(){
       <main className="flex-1 min-w-0 flex flex-col">
         <HeaderBar displayedTitle="Quizzes" userName={ user.name } userRole={ user.role } />
         <div className="flex-1 p-8 overflow-y-auto space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <QuizCard courseName={ "Database Systems" } title={ "Introductory SQL Querying" } topicName={ "SQL Basics" } bestScore={ 50 } numberOfQuestions={ 2 } durationInMinutes={ 50 } />
-            <QuizCard courseName={ "Database Systems" } title={ "Introductory SQL Querying" } topicName={ "SQL Basics" } bestScore={ 70 } numberOfQuestions={ 2 } durationInMinutes={ 50 } />
-            <QuizCard courseName={ "Database Systems" } title={ "Introductory SQL Querying" } topicName={ "SQL Basics" } bestScore={ 100 } numberOfQuestions={ 2 } durationInMinutes={ 50 } />
-          </div>
+          {loading && (
+            <div className="rounded-xl bg-white p-6 shadow-sm text-gray-600">Loading quizzes...</div>
+          )}
+
+          {!loading && (
+            <div className="grid grid-cols-2 gap-4">
+              {quizData.length > 0 ? (
+                quizData.map((quiz) => (
+                  <QuizCard key={quiz.id} id={quiz.id} courseName={quiz.courseName} title={quiz.title} topicName={quiz.topicName} bestScore={quiz.bestScore ?? 0} numberOfQuestions={quiz.numberOfQuestions} durationInMinutes={quiz.durationInMinutes} onStartQuiz={() => handleStartQuiz(quiz)} />
+                ))
+              ) : (
+                <div className="rounded-xl bg-white p-6 shadow-sm text-gray-600 col-span-2">No quizzes available.</div>
+              )}
+            </div>
+          )}
+
+          {showQuestionDialog && selectedQuiz && (
+            <QuestionDialog quizTitle={selectedQuiz.title} quizTopic={selectedQuiz.topicName} durationInMinutes={selectedQuiz.durationInMinutes} questionList={questionList} onClose={closeQuestionDialog} />
+          )}
         </div>
       </main>
     </div>

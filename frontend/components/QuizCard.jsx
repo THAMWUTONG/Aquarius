@@ -1,20 +1,6 @@
 import { FaArrowRight } from "react-icons/fa"
-import QuestionDialog from "./QuestionDialog"
-import { getQuizQuestions } from "../services/getQuizQuestionsService"
 
-function QuizCard({ id, courseName, title, topicName, bestScore, durationInMinutes, numberOfQuestions }) {
-  async function fetchQuestions() {
-    try {
-      const questionList = await getQuizQuestions(id)
-
-      return (
-        <QuestionDialog quizTitle={title} quizTopic={topicName} durationInMinutes={durationInMinutes} questionList={questionList}/>
-      )
-    }
-    catch (error) {
-      alert(error.message)
-    }
-  }
+function QuizCard({ id, courseName, title, topicName, bestScore, durationInMinutes, numberOfQuestions, onStartQuiz }) {
   return (
     <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
       <p className="w-fit p-1 rounded-lg text-sm text-sky-500 bg-sky-100">{courseName}</p>
@@ -31,7 +17,7 @@ function QuizCard({ id, courseName, title, topicName, bestScore, durationInMinut
       </div>
       <div className="flex justify-between items-center">
         <p className="text-xs text-sky-500 font-bold">{numberOfQuestions} questions • {durationInMinutes} minutes</p>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={fetchQuestions}>
+        <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => onStartQuiz?.()}>
           Start Quiz<FaArrowRight />
         </button>
       </div>
