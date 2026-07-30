@@ -37,8 +37,8 @@ function getAllMaterialsForStudent(int $studentId): array
                 ON b.material_id = sm.id AND b.student_id = :studentId2
             WHERE sm.regulation_status = 'approved'
             ORDER BY sm.uploaded_at DESC";
-        
-       
+
+
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':studentId1', $studentId, PDO::PARAM_INT);
