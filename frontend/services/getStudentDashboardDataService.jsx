@@ -7,6 +7,5 @@ export async function getStudentDashboardData() {
     throw new Error(data.message || 'Failed to retrieve dashboard data.');
   }
   
-  console.log(data)
   return data;
 }

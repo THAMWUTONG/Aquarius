@@ -4,7 +4,7 @@ export async function getQuizData() {
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || 'Login failed');
+    throw new Error(data.message || 'Failed to retrieve quizzes.');
   }
 
   return data;
