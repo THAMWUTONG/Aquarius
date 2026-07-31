@@ -5,6 +5,7 @@ import { useNavigate } from "react-router"
 import { useEffect, useState } from "react"
 import StudentStudyCalendar from "../components/StudentStudyCalendar.jsx"
 import { FaTimes } from "react-icons/fa"
+import { getStudentCalendarData } from "../services/getStudentCalendarDataService.jsx"
 
 function StudyCalendar(){
   const { user } = useAuth()
@@ -12,6 +13,8 @@ function StudyCalendar(){
   const [isMarkEventOpen, setIsMarkEventOpen] = useState(false)
   const [isGenerateScheduleOpen, setIsGenerateScheduleOpen] = useState(false)
   const [freeDates, setFreeDates] = useState([""])
+  const [calendarData, setCalendarData] = useState({ importantEvents: [], studySchedule: [] })
+  const [loading, setLoading] = useState(true)
 
   function addFreeDate() {
     setFreeDates(prev => [...prev, ""])
@@ -26,10 +29,29 @@ function StudyCalendar(){
   useEffect(() => {
     if (!user || user.role !== "student") {
       navigate("/")
+      return
     }
+
+    async function fetchCalendarData() {
+      try {
+        const data = await getStudentCalendarData()
+        setCalendarData({
+          importantEvents: data.importantEvents || [],
+          studySchedule: data.studySchedule || []
+        })
+      }
+      catch (error) {
+        alert(error.message)
+      }
+      finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCalendarData()
   }, [user, navigate])
   
-  if (!user || user.role !== "student") {
+  if (!user || user.role !== "student" || loading) {
     return null;
   }
   else{
@@ -44,7 +66,7 @@ function StudyCalendar(){
               <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsGenerateScheduleOpen(true)}>Generate Study Schedule</button>
             </div>
             <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
-              <StudentStudyCalendar />
+              <StudentStudyCalendar importantEvents={calendarData.importantEvents} studySchedule={calendarData.studySchedule} />
             </div>
           </div>
         </main>

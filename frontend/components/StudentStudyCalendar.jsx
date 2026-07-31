@@ -1,47 +1,52 @@
-import { useState } from "react"
 import { FaCalendarAlt } from "react-icons/fa"
 
-function StudentStudyCalendar() {
+function StudentStudyCalendar({ importantEvents = [], studySchedule = [] }) {
   const year = new Date().getFullYear()
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   const month = new Date().getMonth()
   const firstDayOfMonth = new Date(year, month, 1).getDay()
-  const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate() // 0 means the last day of the previous month.
-  // Stores events for easy render.
-  // Day Format:
-  // date(1-indexed): [{ title: "Math exam", type: "exam"}]
-  const [events, setEvents] = useState({})
+  const numberOfDaysInMonth = new Date(year, month + 1, 0).getDate()
+
+  const eventsByDay = {}
+  const combinedItems = importantEvents.concat(studySchedule)
+
+  combinedItems.forEach((item) => {
+    const dateKey = item.eventDate || item.scheduledDate
+    if (!dateKey) return
+
+    const dayNumber = Number(dateKey.split("-")[2])
+    if (!Number.isInteger(dayNumber)) return
+
+    if (!eventsByDay[dayNumber]) {
+      eventsByDay[dayNumber] = []
+    }
+
+    eventsByDay[dayNumber].push({
+      title: item.title || item.topicTitle,
+      type: item.eventType ? "event" : "study"
+    })
+  })
 
   function mapDaysToCalendar() {
     const days = []
+    const today = new Date().getDate()
 
-    // Insert the first date of the month and setting its grid column placement to match the day of the date.
-    // Note: gridColumn with dynamic values does not work using tailwindCSS, so style attribute was used instead.
-    if (new Date().getDate() === 1) {
-      days.push(
-        <div key={0} className="flex flex-col gap-2 min-h-20 p-1.5 border border-sky-500 rounded-lg bg-sky-100" style={{ gridColumn: firstDayOfMonth + 1 }}>
+    const renderDayCell = (dayNumber, isFirstDay = false) => {
+      const isToday = today === dayNumber
+      const cells = eventsByDay[dayNumber] || []
+
+      return (
+        <div
+          key={dayNumber}
+          className={`flex flex-col gap-2 min-h-20 p-1.5 border rounded-lg ${isToday ? "border-sky-500 bg-sky-100" : "border-gray-300"}`}
+          style={isFirstDay ? { gridColumn: firstDayOfMonth + 1 } : undefined}
+        >
           <div>
-            <p className="font-bold text-sky-500">{1}</p>
+            <p className={isToday ? "font-bold text-sky-500" : ""}>{dayNumber}</p>
           </div>
-          <div className="space-y-1" id={`day${1}EventHolder`}>
-            {(events[0] || []).map(event => (
-              <div className="p-1 rounded text-xs bg-sky-200">
-                {event.title}
-              </div>
-            ))}
-          </div>
-        </div>
-      )
-    }
-    else {
-      days.push(
-        <div key={0} className="flex flex-col gap-2 min-h-20 p-1.5 border border-gray-300 rounded-lg" style={{ gridColumn: firstDayOfMonth + 1 }}>
-          <div>
-            <p>{1}</p>
-          </div>
-          <div className="space-y-1" id={`day${1}EventHolder`}>
-            {(events[0] || []).map(event => (
-              <div className="p-1 rounded text-xs bg-sky-200">
+          <div className="space-y-1" id={`day${dayNumber}EventHolder`}>
+            {cells.map((event, index) => (
+              <div key={`${dayNumber}-${index}`} className="rounded bg-sky-200 p-1 text-xs">
                 {event.title}
               </div>
             ))}
@@ -50,39 +55,10 @@ function StudentStudyCalendar() {
       )
     }
 
-    for (let day = 1; day < numberOfDaysInMonth ; day++) {
-      if (new Date().getDate() === day + 1) {
-        days.push(
-          <div key={day} className="flex flex-col gap-2 min-h-20 p-1.5 border border-sky-500 rounded-lg bg-sky-100">
-            <div>
-              <p className="font-bold text-sky-500">{day + 1}</p>
-            </div>
-            <div className="space-y-1" id={`day${day + 1}EventHolder`}>
-              {(events[day + 1] || []).map(event => (
-                <div className="p-1 rounded text-xs bg-sky-200">
-                  {event.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      }
-      else {
-        days.push(
-          <div key={day} className="flex flex-col gap-2 min-h-20 p-1.5 border border-gray-300 rounded-lg">
-            <div>
-              <p>{day + 1}</p>
-            </div>
-            <div className="space-y-1" id={`day${day + 1}EventHolder`}>
-              {(events[day + 1] || []).map(event => (
-                <div className="p-1 rounded text-xs bg-sky-200">
-                  {event.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      }
+    days.push(renderDayCell(1, true))
+
+    for (let day = 2; day <= numberOfDaysInMonth; day++) {
+      days.push(renderDayCell(day))
     }
 
     return days
