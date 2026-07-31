@@ -29,14 +29,20 @@ function getAllMaterialsForStudent(int $studentId): array
             FROM study_materials sm
             JOIN topics t ON sm.topic_id = t.id
             JOIN courses c ON t.course_id = c.id
+            JOIN enrollment en
+                ON en.course_id = c.id
+                AND en.student_id = :studentId1
+                AND en.status = 'active'
             LEFT JOIN bookmarks b
-                ON b.material_id = sm.id AND b.student_id = :studentId
+                ON b.material_id = sm.id AND b.student_id = :studentId2
             WHERE sm.regulation_status = 'approved'
             ORDER BY sm.uploaded_at DESC";
 
+
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':studentId', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':studentId1', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':studentId2', $studentId, PDO::PARAM_INT);
         $stmt->execute();
 
         return ['success' => true, 'data' => $stmt->fetchAll()];
