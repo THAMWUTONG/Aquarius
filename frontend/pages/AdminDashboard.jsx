@@ -97,11 +97,11 @@ function AdminDashboard() {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Total Users" value={loading ? null : stats?.totalUsers} icon={<FaUsers className="text-sky-500" size={20} />} />
               <StatCard label="Total Courses" value={loading ? null : stats?.totalCourses} icon={<FaBook className="text-sky-500" size={20} />} />
-              <StatCard label="Active Today" value={loading ? null : stats?.activeUsers} icon={<FaUserCheck className="text-emerald-500" size={20} />} />
+              <StatCard label="Active Today" value={loading ? null : stats?.activeUsers} icon={<FaUserCheck className="text-sky-500" size={20} />} />
               <StatCard
                 label="Pending Approvals"
                 value={loading ? null : stats?.pendingApprovals}
-                icon={<FaExclamationTriangle className="text-amber-500" size={20} />}
+                icon={<FaExclamationTriangle className="text-sky-500" size={20} />}
                 sublabel={!loading && stats ? `${stats.pendingMaterials} materials · ${stats.pendingQuizzes} quizzes` : null}
               />
             </div>
