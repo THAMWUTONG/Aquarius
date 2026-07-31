@@ -24,11 +24,8 @@ function App() {
   return (
     <Routes>
       <Route index element={<Login />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-
       <Route path="/student-dashboard" element={<StudentDashboard />} />
-            <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
-
+      <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
       <Route path="/study-materials" element={<StudyMaterials />} />
       <Route path="/take-quizzes" element={<TakeQuizzes />} />
       <Route path="/performance-overview" element={<PerformanceOverview/>} />
@@ -39,13 +36,12 @@ function App() {
       <Route path="/monitor-performance" element={<MonitorPerformance />} />
       <Route path="/lecturer-profile" element={<LecturerProfile />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
-       <Route path="/manage-users" element={<ManageUsers />} />
+      <Route path="/manage-users" element={<ManageUsers />} />
       <Route path="/platform-statistics" element={<PlatformStatistics />} />
       <Route path="/platform-regulation" element={<PlatformRegulation />} />
       <Route path="/manage-enrollment" element={<ManageEnrollment />} />
       <Route path="/audit-log" element={<AuditLog />} />
       <Route path="/admin-profile" element={<AdminProfile />} />
-
     </Routes>
   )
 }

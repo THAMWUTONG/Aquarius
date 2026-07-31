@@ -88,9 +88,13 @@ function AdminDashboard() {
               </div>
             )}
 
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome back, {user.name}</h2>
-              <p className="mt-1 text-slate-500">Here's what's happening on Aquarius today.</p>
+            <div className="flex justify-between items-center p-6 rounded-xl shadow-md bg-linear-to-r from-sky-400 to-sky-600">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Good morning, { user.name }!</h2>
+                <p className="text-white">Here's what's happening on Aquarius today.</p>
+              </div>
+              <div className="flex gap-2">
+                </div>
             </div>
 
             {/* Top stat cards */}
@@ -115,8 +119,8 @@ function AdminDashboard() {
                 ) : (
                   <div className="space-y-3">
                     <RoleBar label="Students" count={stats?.totalStudents} percentage={stats?.studentPercentage} color="bg-sky-400" />
-                    <RoleBar label="Lecturers" count={stats?.totalLecturers} percentage={stats?.lecturerPercentage} color="bg-emerald-400" />
-                    <RoleBar label="Admins" count={stats?.totalAdmins} percentage={stats?.adminPercentage} color="bg-amber-400" />
+                    <RoleBar label="Lecturers" count={stats?.totalLecturers} percentage={stats?.lecturerPercentage} color="bg-sky-400" />
+                    <RoleBar label="Admins" count={stats?.totalAdmins} percentage={stats?.adminPercentage} color="bg-sky-400" />
                   </div>
                 )}
               </div>
