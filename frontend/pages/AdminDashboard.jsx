@@ -88,20 +88,24 @@ function AdminDashboard() {
               </div>
             )}
 
-            <div>
-              <h2 className="text-2xl font-bold text-slate-900">Welcome back, {user.name}</h2>
-              <p className="mt-1 text-slate-500">Here's what's happening on Aquarius today.</p>
+            <div className="flex justify-between items-center p-6 rounded-xl shadow-md bg-linear-to-r from-sky-400 to-sky-600">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Good morning, { user.name }!</h2>
+                <p className="text-white">Here's what's happening on Aquarius today.</p>
+              </div>
+              <div className="flex gap-2">
+                </div>
             </div>
 
             {/* Top stat cards */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <StatCard label="Total Users" value={loading ? null : stats?.totalUsers} icon={<FaUsers className="text-sky-500" size={20} />} />
               <StatCard label="Total Courses" value={loading ? null : stats?.totalCourses} icon={<FaBook className="text-sky-500" size={20} />} />
-              <StatCard label="Active Today" value={loading ? null : stats?.activeUsers} icon={<FaUserCheck className="text-emerald-500" size={20} />} />
+              <StatCard label="Active Today" value={loading ? null : stats?.activeUsers} icon={<FaUserCheck className="text-sky-500" size={20} />} />
               <StatCard
                 label="Pending Approvals"
                 value={loading ? null : stats?.pendingApprovals}
-                icon={<FaExclamationTriangle className="text-amber-500" size={20} />}
+                icon={<FaExclamationTriangle className="text-sky-500" size={20} />}
                 sublabel={!loading && stats ? `${stats.pendingMaterials} materials · ${stats.pendingQuizzes} quizzes` : null}
               />
             </div>
@@ -115,8 +119,8 @@ function AdminDashboard() {
                 ) : (
                   <div className="space-y-3">
                     <RoleBar label="Students" count={stats?.totalStudents} percentage={stats?.studentPercentage} color="bg-sky-400" />
-                    <RoleBar label="Lecturers" count={stats?.totalLecturers} percentage={stats?.lecturerPercentage} color="bg-emerald-400" />
-                    <RoleBar label="Admins" count={stats?.totalAdmins} percentage={stats?.adminPercentage} color="bg-amber-400" />
+                    <RoleBar label="Lecturers" count={stats?.totalLecturers} percentage={stats?.lecturerPercentage} color="bg-sky-400" />
+                    <RoleBar label="Admins" count={stats?.totalAdmins} percentage={stats?.adminPercentage} color="bg-sky-400" />
                   </div>
                 )}
               </div>
@@ -215,6 +219,7 @@ function StatCard({ label, value, icon, sublabel }) {
       <div className="rounded-full p-3 bg-sky-50">{icon}</div>
     </div>
   )
+  
 }
 
 /**
