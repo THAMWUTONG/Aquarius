@@ -1,6 +1,5 @@
 import { Link, useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
@@ -46,7 +45,7 @@ function Login() {
     else {
       try {
         const user = await login(formData.get("email"), formData.get("password"));
-
+        console.log(user);
         setUser(user);
         switch (user.role) {
           case "student":
@@ -70,17 +69,7 @@ function Login() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute w-full h-full z-0">
-        <FloatingLines 
-          enabledWaves={["bottom","middle","top"]}
-          lineCount={7}
-          lineDistance={8}
-          bendRadius={8}
-          bendStrength={-2}
-          interactive={false}
-          parallax={false}
-          animationSpeed={0.7}
-          linesGradient={["#32B7F3", "#0d629e", "#094461"]}
-      />
+
       </div>
       <div className="flex justify-center items-center relative z-10 min-h-screen">
         <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
