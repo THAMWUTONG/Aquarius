@@ -12,6 +12,13 @@ import ManageQuizzes from "./lecturer/ManageQuizzes.jsx"
 import ManageMaterials from "./lecturer/ManageMaterials.jsx"
 import MonitorPerformance from "./lecturer/MonitorPerformance.jsx"
 import LecturerProfile from "./lecturer/LecturerProfile.jsx"
+import AdminDashboard from "./pages/AdminDashboard.jsx"
+import ManageUsers from "./pages/ManageUsers.jsx"
+import PlatformStatistics from "./pages/PlatformStatistics.jsx"
+import PlatformRegulation from "./pages/PlatformRegulation.jsx"
+import ManageEnrollment from "./pages/ManageEnrollment.jsx"
+import AuditLog from "./pages/AuditLog.jsx"
+import AdminProfile from "./pages/AdminProfile.jsx"
 
 function App() {
   return (
@@ -31,6 +38,13 @@ function App() {
       <Route path="/manage-materials" element={<ManageMaterials />} />
       <Route path="/monitor-performance" element={<MonitorPerformance />} />
       <Route path="/lecturer-profile" element={<LecturerProfile />} />
+      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+       <Route path="/manage-users" element={<ManageUsers />} />
+      <Route path="/platform-statistics" element={<PlatformStatistics />} />
+      <Route path="/platform-regulation" element={<PlatformRegulation />} />
+      <Route path="/manage-enrollment" element={<ManageEnrollment />} />
+      <Route path="/audit-log" element={<AuditLog />} />
+      <Route path="/admin-profile" element={<AdminProfile />} />
 
     </Routes>
   )
