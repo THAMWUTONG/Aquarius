@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router"
+import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
@@ -11,7 +11,7 @@ import { login } from "../services/authService.jsx"
  */
 function Login() {
   const navigate = useNavigate();
-  const { setUser } = useAuth(); 
+  const { setUser } = useAuth();
 
   function validateEmail(email) {
     // Regex breakdown:
@@ -48,6 +48,7 @@ function Login() {
         const user = await login(formData.get("email"), formData.get("password"));
 
         setUser(user);
+        localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {
           case "student":
             navigate("/student-dashboard");
@@ -63,7 +64,6 @@ function Login() {
       catch (error) {
         alert(error.message);
       }
-      return;
     }
   }
 
@@ -98,7 +98,6 @@ function Login() {
             <div className="flex flex-col gap-2">
               <label className="text-sm" htmlFor="password">Password</label>
               <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="password" type="password" />
-              <Link className="text-sm underline" to="/forgot-password">Forgot Password?</Link>
             </div>
             <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all" type="submit">Sign In <FaSignInAlt /></button>
           </form>
