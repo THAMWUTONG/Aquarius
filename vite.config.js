@@ -17,6 +17,12 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:80/Aquarius/backend',
         changeOrigin: true,
+      },
+      // Uploaded material files are written to /uploads and served by XAMPP,
+      // not by Vite, so the links in the materials table need forwarding too.
+      '/uploads': {
+        target: 'http://localhost:80/Aquarius',
+        changeOrigin: true,
       }
     }
   }

@@ -1,7 +1,7 @@
-import logo from "../assets/placeholder.png"
-import { useAuth } from "../context/AuthContext.jsx"
-import SidebarNavItems from "./SidebarNavItems.jsx"
-import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt } from "react-icons/fa";
+import logo from "../assets/placeholder.png";
+import { useAuth } from "../context/AuthContext.jsx";
+import SidebarNavItems from "./SidebarNavItems.jsx";
+import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog, FaUsersCog, FaChartBar, FaShieldAlt, FaUserGraduate, FaHistory } from "react-icons/fa";
 
 function Sidebar() {
   const { user } = useAuth()
@@ -18,21 +18,32 @@ function Sidebar() {
           <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/profile" />
           <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
-      )
+      );
     }
     else if (user && user.role === "lecturer") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          
+          <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/lecturer-dashboard" />
+          <SidebarNavItems displayedText="Manage Quizzes" icon={ <FaGraduationCap /> } href="/manage-quizzes" />
+          <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/manage-materials" />
+          <SidebarNavItems displayedText="Monitor Performance" icon={ <FaChartLine /> } href="/monitor-performance" />
+          <SidebarNavItems displayedText="Profile & Settings" icon={ <FaCog /> } href="/lecturer-profile" />
+          <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
-      )
+      );
     }
     else if (user && user.role === "admin") {
       return (
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-          
+          <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/admin-dashboard" />
+          <SidebarNavItems displayedText="Manage Users" icon={ <FaUsersCog /> } href="/manage-users" />
+          <SidebarNavItems displayedText="Platform Statistics" icon={ <FaChartBar /> } href="/platform-statistics" />
+          <SidebarNavItems displayedText="Platform Regulation" icon={ <FaShieldAlt /> } href="/platform-regulation" />
+          <SidebarNavItems displayedText="Manage Enrollment" icon={ <FaUserGraduate /> } href="/manage-enrollment" />
+          <SidebarNavItems displayedText="Audit Log" icon={ <FaHistory /> } href="/audit-log" />
+          <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/admin-profile" />
+          <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
-
       )
     }
   }
@@ -47,6 +58,7 @@ function Sidebar() {
       {renderNavigationItems(user)}
       
     </div>
-  )
+  );
 }
-export default Sidebar
+
+export default Sidebar;
