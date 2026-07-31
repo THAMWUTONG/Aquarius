@@ -4,6 +4,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import CreateQuizModal from '../components/CreateQuiz.jsx'; // 1. Import Modal
 import EditQuizButton from '../components/EditQuizButton.jsx';
+import StatusBadge from '../components/StatusBadge.jsx';
 import EditQuizModal from './EditQuizModal.jsx';
 import QuizFeedbackModal from './QuizFeedbackModal.jsx';
 import { FaPlus, FaRegComment, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
@@ -19,6 +20,7 @@ const initialQuizzes = [
     topic: 'Variables & Data Types',
     questions: 5,
     comments: 1,
+    regulationStatus: 'approved',
   },
   {
     id: 2,
@@ -27,6 +29,7 @@ const initialQuizzes = [
     topic: 'If-else, loops, and logical operators',
     questions: 5,
     comments: 1,
+    regulationStatus: 'approved',
   },
   {
     id: 3,
@@ -35,6 +38,7 @@ const initialQuizzes = [
     topic: 'SQL Queries',
     questions: 10,
     comments: 0,
+    regulationStatus: 'approved',
   },
   {
     id: 4,
@@ -43,6 +47,7 @@ const initialQuizzes = [
     topic: 'Bubble, merge, quick sort',
     questions: 5,
     comments: 0,
+    regulationStatus: 'pending',
   },
   {
     id: 5,
@@ -51,6 +56,7 @@ const initialQuizzes = [
     topic: 'Probability Distributions',
     questions: 8,
     comments: 0,
+    regulationStatus: 'pending',
   },
 ];
 
@@ -194,6 +200,7 @@ function ManageQuizzes() {
                       <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Questions</th>
+                      <th className="py-4 px-6 text-center">Status</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -206,6 +213,11 @@ function ManageQuizzes() {
                           <td className="py-4 px-6 text-slate-700 font-medium">{quiz.course}</td>
                           <td className="py-4 px-6 text-slate-500">{quiz.topic}</td>
                           <td className="py-4 px-6 text-center font-medium text-slate-700">{quiz.questions}</td>
+
+                          {/* Regulation Status */}
+                          <td className="py-4 px-6 text-center">
+                            <StatusBadge status={quiz.regulationStatus} />
+                          </td>
 
                           {/* Action Buttons */}
                           <td className="py-4 px-6">

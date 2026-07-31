@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import { FaPlus, FaLink, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import EditMaterialButton from '../components/EditMaterialButton.jsx';
+import StatusBadge from '../components/StatusBadge.jsx';
 import UploadMaterialModal from './UploadMaterials.jsx';
 import EditMaterialModal from './EditMaterialModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -17,7 +18,9 @@ const initialMaterials = [
     course: 'Introduction to Programming',
     topic: 'Variables & Data Types',
     type: 'SLIDES',
-    prerequisites: '—',
+    fileName: 'python_vars.pdf',
+    fileHref: '/materials/cs101/python_vars.pdf',
+    regulationStatus: 'approved',
   },
   {
     id: 2,
@@ -25,7 +28,9 @@ const initialMaterials = [
     course: 'Introduction to Programming',
     topic: 'If-else, loops, and logical operators',
     type: 'VIDEO',
-    prerequisites: '1 topics',
+    fileName: 'control_flow.mp4',
+    fileHref: '/materials/cs101/control_flow.mp4',
+    regulationStatus: 'approved',
   },
   {
     id: 3,
@@ -33,7 +38,9 @@ const initialMaterials = [
     course: 'Introduction to Programming',
     topic: 'Defining reusable functions',
     type: 'PDF',
-    prerequisites: '1 topics',
+    fileName: 'functions_ref.pdf',
+    fileHref: '/materials/cs101/functions_ref.pdf',
+    regulationStatus: 'approved',
   },
   {
     id: 4,
@@ -41,7 +48,9 @@ const initialMaterials = [
     course: 'Data Structures & Algorithms',
     topic: 'Linear data structures',
     type: 'DOCUMENT',
-    prerequisites: '—',
+    fileName: 'linked_lists.docx',
+    fileHref: '/materials/cs201/linked_lists.docx',
+    regulationStatus: 'approved',
   },
   {
     id: 5,
@@ -49,7 +58,9 @@ const initialMaterials = [
     course: 'Data Structures & Algorithms',
     topic: 'Bubble, merge, quick sort',
     type: 'VIDEO',
-    prerequisites: '1 topics',
+    fileName: 'sorting_algo.mp4',
+    fileHref: '/materials/cs201/sorting_algo.mp4',
+    regulationStatus: 'pending',
   },
   {
     id: 6,
@@ -57,7 +68,9 @@ const initialMaterials = [
     course: 'Database Systems',
     topic: 'ER Modelling',
     type: 'PDF',
-    prerequisites: '—',
+    fileName: 'er_diagram.pdf',
+    fileHref: '/materials/db301/er_diagram.pdf',
+    regulationStatus: 'approved',
   },
   {
     id: 7,
@@ -65,7 +78,9 @@ const initialMaterials = [
     course: 'Database Systems',
     topic: 'SQL Queries',
     type: 'PDF',
-    prerequisites: '1 topics',
+    fileName: 'sql_exercises.pdf',
+    fileHref: '/materials/db301/sql_exercises.pdf',
+    regulationStatus: 'approved',
   },
 ];
 
@@ -81,7 +96,8 @@ function ManageMaterials() {
   // The API field names are mapped onto the shape this table already expects,
   // so none of the JSX below has to change:
   //   fileType (lowercase)  -> type       (the badge CSS uppercases it)
-  //   prerequisites (number) -> '2 topics' | null
+  //   filePath              -> fileHref   (root-relative, for the link)
+  // regulationStatus is passed straight through - StatusBadge does the styling.
   const fetchMaterials = async () => {
     try {
       const data = await getLecturerMaterials();
@@ -95,7 +111,12 @@ function ManageMaterials() {
           course: item.course,
           topic: item.topic,
           type: item.fileType,
-          prerequisites: item.prerequisites > 0 ? `${item.prerequisites} topics` : null,
+          fileName: item.fileName,
+          // Stored two ways: 'uploads/<hash>.pdf' for real uploads and
+          // '/materials/...' for the seeded rows. Normalising to exactly one
+          // leading slash makes both usable as a root-relative href.
+          fileHref: item.filePath ? `/${item.filePath.replace(/^\/+/, '')}` : null,
+          regulationStatus: item.regulationStatus,
         }))
       );
       setIsFallback(false);
@@ -209,6 +230,7 @@ function ManageMaterials() {
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Type</th>
                       <th className="py-4 px-6 text-center">Prerequisites</th>
+                      <th className="py-4 px-6 text-center">Status</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -237,16 +259,27 @@ function ManageMaterials() {
                           </span>
                         </td>
 
-                        {/* Prerequisites Badge */}
+                        {/* Prerequisites: links to the material's stored file */}
                         <td className="py-4 px-6 text-center">
-                          {item.prerequisites && item.prerequisites !== '—' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100">
-                              <FaLink className="text-[10px]" />
-                              {item.prerequisites}
-                            </span>
+                          {item.fileHref ? (
+                            <a
+                              href={item.fileHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={item.fileName || item.fileHref}
+                              className="inline-flex items-center gap-1 max-w-[220px] px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                            >
+                              <FaLink className="text-[10px] shrink-0" />
+                              <span className="truncate">{item.fileName || 'Open file'}</span>
+                            </a>
                           ) : (
                             <span className="text-slate-300 font-medium">—</span>
                           )}
+                        </td>
+
+                        {/* Regulation Status */}
+                        <td className="py-4 px-6 text-center">
+                          <StatusBadge status={item.regulationStatus} />
                         </td>
 
                         {/* Actions Row */}

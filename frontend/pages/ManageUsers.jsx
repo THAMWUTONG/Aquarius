@@ -278,13 +278,12 @@ function ManageUsers() {
 function UserForm({ initialValues, onSubmit, onCancel }) {
   const [name, setName] = useState(initialValues?.name || "")
   const [email, setEmail] = useState(initialValues?.email || "")
+  const [password, setPassword] = useState("")
   const [role, setRole] = useState(initialValues?.role || ROLE_OPTIONS[0])
   const [formError, setFormError] = useState(null)
 
-  /**
-   * Validates and submits the form.
-   * @param {React.FormEvent} e
-   */
+  const isEditing = !!initialValues
+
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim() || !email.trim()) {
@@ -295,8 +294,16 @@ function UserForm({ initialValues, onSubmit, onCancel }) {
       setFormError("Please enter a valid email address.")
       return
     }
+    if (!isEditing && (!password || password.length < 6)) {
+      setFormError("Password must be at least 6 characters.")
+      return
+    }
     setFormError(null)
-    onSubmit({ name: name.trim(), email: email.trim(), role })
+    const payload = { name: name.trim(), email: email.trim(), role }
+    if (!isEditing) {
+      payload.password = password
+    }
+    onSubmit(payload)
   }
 
   return (
@@ -316,6 +323,15 @@ function UserForm({ initialValues, onSubmit, onCancel }) {
           id="email" value={email} onChange={(e) => setEmail(e.target.value)} type="text"
         />
       </div>
+      {!isEditing && (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm" htmlFor="password">Password</label>
+          <input
+            className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            id="password" value={password} onChange={(e) => setPassword(e.target.value)} type="password"
+          />
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <label className="text-sm" htmlFor="role">Role</label>
         <select

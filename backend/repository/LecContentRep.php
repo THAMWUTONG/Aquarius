@@ -39,6 +39,7 @@ function getLecturerQuizzes(int $lecturerUserId): array
                 t.title AS topic,
                 q.duration_min,
                 q.is_published,
+                q.regulation_status,
                 (SELECT COUNT(*) FROM quiz_questions qq WHERE qq.quiz_id = q.id) AS questions,
                 (SELECT COUNT(*) FROM quiz_feedback qf WHERE qf.quiz_id = q.id) AS comments
             FROM lecturers l
@@ -201,6 +202,7 @@ function getLecturerMaterials(int $lecturerUserId): array
                 t.title AS topic,
                 sm.file_type,
                 sm.file_name,
+                sm.file_path,
                 sm.regulation_status,
                 sm.uploaded_at,
                 (SELECT COUNT(*)
