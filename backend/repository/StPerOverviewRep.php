@@ -34,15 +34,16 @@ function getCourseProgress(int $studentId): array
             JOIN topics t ON t.course_id = c.id
             JOIN quizzes q ON q.topic_id = t.id AND q.regulation_status = 'approved'
             LEFT JOIN quiz_attempts qa
-                ON qa.quiz_id = q.id AND qa.student_id = :studentId
-            WHERE e.student_id = :studentId
+                ON qa.quiz_id = q.id AND qa.student_id = :student1Id
+            WHERE e.student_id = :student2Id
               AND e.status = 'active'
             GROUP BY c.id, c.title
             ORDER BY c.title ASC";
 
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':studentId', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':student1Id', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':student2Id', $studentId, PDO::PARAM_INT);
         $stmt->execute();
 
         return ['success' => true, 'data' => $stmt->fetchAll()];
