@@ -47,7 +47,7 @@ function handleAskRequest(): void
         $result = handleQuestion($validation['question']);
 
         if (!$result['success']) {
-            sendChatbotError($result['error'], 402);
+            handleCbotLogError($result['error']);
             return;
         }
 
@@ -147,7 +147,6 @@ function validateQuestionInput(): array
 /**
  * Success response
  * @param string $answerText
- * @param array $recommendedMaterials
  */
 function sendChatbotSuccess(string $answerText): void
 {
