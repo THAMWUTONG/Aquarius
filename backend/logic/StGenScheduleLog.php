@@ -1,27 +1,26 @@
 <?php
 /**
- * StGenScheduleLog.php  (Logic Layer)
+ * StGenScheduleLog.php 
  *
  * Generate Study Schedule
  *   1. Student picks a free date/dates 
  * 
- *   2. We fetch the student's weak topics (avg quiz score < 70%),
+ *   2. Fetch the student's weak topics (avg quiz score < 70%),
  *      already ordered weakest-first.
  * 
- *   3. pairCount = min(count(freeDates), count(weakTopics))
- *        - dates > weak topics        
- *  ( The system will only schedule the first 2 days. 
- *  The remaining 3 days are left completely empty so the student can just rest.)
+ *   3. Fetch non-weak topics (avg >= 70% or never attempted), used as
+ *      filler once the weak topics run out.
  * 
- *        - weak topics > dates 
- *  (it grabs only the top 2 weakest topics)
+ *   4. weak topics -> non-weak topics -> then
+ *      repeated again through the weak topics til all dates
+ *      are filled
  * 
  *   4. Insert each pair into study_schedule.
  *
  *
  * Split into 3 functions 
  *   - validateFreeDates()        : input cleaning + validation only
- *   - pairDatesWithWeakTopics()  : pure pairing logic, no DB access
+ *   - pairDatesWithTopics()      : weak -> non-weak -> repeat weak
  *   - generateStudySchedule()    : Main Function (validate -> fetch -> pair -> insert)
  */
 
@@ -66,35 +65,79 @@ function validateFreeDates(mixed $freeDates): array
 }
 
 /**
- * Pure pairing logic — no DB access here, easy to unit test on its own.
- * Pairs the earliest date with the weakest topic, second-earliest with
- * second-weakest, and so on, until either list runs out.
+ *   1. All weak topics, weakest first.
+ *   2. Then non-weak topics, if dates remain.
+ *   3. Then loop back to the weak topics until every date has a topic.
  *
- * @param string[] $sortedDates      'YYYY-MM-DD', sorted earliest first
- * @param array    $weakTopicsAsc    rows with topic_id/topic_title, sorted weakest first
+ * If the student has no weak topics at all, step 3 cycles the non-weak
+ * list instead, so the loop can always fill the remaining dates.
+ *
+ * @param string[] $sortedDates       'YYYY-MM-DD', earliest first
+ * @param array    $weakTopicsAsc     rows with topic_id & topic_title, weakest first
+ * @param array    $nonWeakTopicsAsc  rows with topic_id & topic_title, lowest average first
  * @return array{
  *   pairs: array<array{topicId:int, topicTitle:string, scheduledDate:string}>,
- *   unscheduledDatesCount: int,
- *   unscheduledWeakTopicsCount: int
+ *   weakTopicSlots: int,
+ *   nonWeakTopicSlots: int,
+ *   repeatedSlots: int
  * }
  */
-function pairDatesWithWeakTopics(array $sortedDates, array $weakTopicsAsc): array
+function pairDatesWithTopics(array $sortedDates, array $weakTopicsAsc, array $nonWeakTopicsAsc): array
 {
-    $pairCount = min(count($sortedDates), count($weakTopicsAsc));
+    // weak topics first, then non-weak topics as filler
+    // weakTopicAsc[
+    // [
+    //     'topic_id' => 12,
+    //     'topic_title' => 'array',
+    //     'avg_percentage' => 45.0
+    // ], ...
+    // nonWeakTopicsAsc['variable', 'Loops']
+    $firstPass = array_merge($weakTopicsAsc, $nonWeakTopicsAsc); // ['array', 'sql', 'variable', 'Loops']
+
+    if (count($firstPass) === 0 || count($sortedDates) === 0) {
+        return ['pairs' => [], 'weakTopicSlots' => 0, 'nonWeakTopicSlots' => 0, 'repeatedSlots' => 0];
+    }
+
+
+    // When the student has no weak topics, Falls back the non-weak list 
+    // so that below never divides by zero
+    $cycleList = count($weakTopicsAsc) > 0 ? $weakTopicsAsc : $nonWeakTopicsAsc;
 
     $pairs = [];
-    for ($i = 0; $i < $pairCount; $i++) {
+    $weakTopicSlots = 0;
+    $nonWeakTopicSlots = 0;
+    $repeatedSlots = 0;
+
+    // $sortedDates = ['2026-08-02', '2026-08-03', '2026-08-04']
+    // $i = 0 -> ['2026-08-02'] 
+    foreach ($sortedDates as $i => $scheduledDate) {
+        if ($i < count($firstPass)) {
+            $topic = $firstPass[$i];
+
+
+            if ($i < count($weakTopicsAsc)) {
+                $weakTopicSlots++;
+            } else {
+                $nonWeakTopicSlots++;
+            }
+        } else {
+            // after assign all weak + non-weak topics. repeat again from the first one.
+            $topic = $cycleList[($i - count($firstPass)) % count($cycleList)];
+            $repeatedSlots++;
+        }
+
         $pairs[] = [
-            'topicId' => (int) $weakTopicsAsc[$i]['topic_id'],
-            'topicTitle' => $weakTopicsAsc[$i]['topic_title'],
-            'scheduledDate' => $sortedDates[$i],
+            'topicId' => (int) $topic['topic_id'],
+            'topicTitle' => $topic['topic_title'],
+            'scheduledDate' => $scheduledDate,
         ];
     }
 
     return [
         'pairs' => $pairs,
-        'unscheduledDatesCount' => count($sortedDates) - $pairCount,
-        'unscheduledWeakTopicsCount' => count($weakTopicsAsc) - $pairCount,
+        'weakTopicSlots' => $weakTopicSlots,
+        'nonWeakTopicSlots' => $nonWeakTopicSlots,
+        'repeatedSlots' => $repeatedSlots,
     ];
 }
 
@@ -122,13 +165,27 @@ function generateStudySchedule(int $studentId, mixed $freeDates): array
 
     $weakTopics = $weakTopicsResult['data'];
     if (count($weakTopics) === 0) {
-        return ['success' => false, 'error' => 'No weak topics found — nothing to schedule right now.'];
+        return ['success' => false, 'error' => 'No weak topics found nothing to schedule right now.'];
     }
 
-    // Pair earliest date <-> weakest topic
-    $paired = pairDatesWithWeakTopics($cleanDates, $weakTopics);
 
-    // Insert each pair 
+
+    $nonWeakTopicsResult = getNonWeakTopicsForScheduling($studentId, 70.0);
+    if (!$nonWeakTopicsResult['success']) {
+        return ['success' => false, 'error' => "Couldn't load topics, please try again later."];
+    }
+    $nonWeakTopics = $nonWeakTopicsResult['data'];
+
+    // Only an error when the student has no topics at all (no active enrollment).
+    if (count($weakTopics) === 0 && count($nonWeakTopics) === 0) {
+        return ['success' => false, 'error' => 'No topics found — enroll in a course first.'];
+    }
+
+    // Pair every date: 
+    // weak -> non-weak -> never attempted -> repeat weak
+    $paired = pairDatesWithTopics($cleanDates, $weakTopics, $nonWeakTopics);
+
+    // Insert each pair (wrapped in a transaction so it's all-or-nothing)
     $pdo = getDbConnection();
     $generatedSchedule = [];
 
@@ -163,8 +220,9 @@ function generateStudySchedule(int $studentId, mixed $freeDates): array
         'success' => true,
         'data' => [
             'schedule' => $generatedSchedule,
-            'unscheduledDatesCount' => $paired['unscheduledDatesCount'],
-            'unscheduledWeakTopicsCount' => $paired['unscheduledWeakTopicsCount'],
+            'weakTopicSlots' => $paired['weakTopicSlots'],
+            'nonWeakTopicSlots' => $paired['nonWeakTopicSlots'],
+            'repeatedSlots' => $paired['repeatedSlots'],
         ],
     ];
 }
