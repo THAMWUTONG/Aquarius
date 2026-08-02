@@ -23,7 +23,9 @@ function getImportantEvents(int $studentId): array
     $sql = "SELECT id, title, event_date, event_type
             FROM important_events
             WHERE student_id = :studentId
-              AND event_date >= CURDATE()
+                 AND YEAR(event_date) = YEAR(CURDATE())
+                 AND MONTH(event_date) = MONTH(CURDATE())
+            --   AND event_date >= CURDATE()
             ORDER BY event_date ASC";
 
     try {
