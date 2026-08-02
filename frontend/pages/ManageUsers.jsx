@@ -276,9 +276,11 @@ function ManageUsers() {
  * @param {Function} props.onCancel - Called when the form is cancelled.
  */
 function UserForm({ initialValues, onSubmit, onCancel }) {
+  const isEditing = !!initialValues
   const [name, setName] = useState(initialValues?.name || "")
   const [email, setEmail] = useState(initialValues?.email || "")
   const [role, setRole] = useState(initialValues?.role || ROLE_OPTIONS[0])
+  const [password, setPassword] = useState("")
   const [formError, setFormError] = useState(null)
 
   /**
@@ -295,8 +297,16 @@ function UserForm({ initialValues, onSubmit, onCancel }) {
       setFormError("Please enter a valid email address.")
       return
     }
+    if (!isEditing && password.length < 6) {
+      setFormError("Password must be at least 6 characters.")
+      return
+    }
     setFormError(null)
-    onSubmit({ name: name.trim(), email: email.trim(), role })
+    onSubmit(
+      isEditing
+        ? { name: name.trim(), email: email.trim(), role }
+        : { name: name.trim(), email: email.trim(), role, password }
+    )
   }
 
   return (
@@ -316,14 +326,24 @@ function UserForm({ initialValues, onSubmit, onCancel }) {
           id="email" value={email} onChange={(e) => setEmail(e.target.value)} type="text"
         />
       </div>
+      {!isEditing && (
+        <div className="flex flex-col gap-1">
+          <label className="text-sm" htmlFor="password">Password</label>
+          <input
+            className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            id="password" value={password} onChange={(e) => setPassword(e.target.value)} type="password"
+          />
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         <label className="text-sm" htmlFor="role">Role</label>
         <select
-          className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500"
-          id="role" value={role} onChange={(e) => setRole(e.target.value)}
+          className="rounded-lg px-3 py-2 text-sm ring ring-gray-300 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-gray-100 disabled:text-gray-400"
+          id="role" value={role} onChange={(e) => setRole(e.target.value)} disabled={isEditing}
         >
           {ROLE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
         </select>
+        {isEditing && <p className="text-xs text-gray-400">Role cannot be changed after creation.</p>}
       </div>
       <div className="flex justify-end gap-3">
         <button className="rounded-lg px-4 py-2 text-sm font-semibold transition-all hover:bg-gray-100" onClick={onCancel} type="button">Cancel</button>
