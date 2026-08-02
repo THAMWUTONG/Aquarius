@@ -44,14 +44,14 @@ function handleAskRequest(): void
             return;
         }
 
-        $result = handleQuestion($validation['question']); //把他丢去隔壁
+        $result = handleQuestion($validation['question']);
 
         if (!$result['success']) {
             handleCbotLogError($result['error']);
             return;
         }
 
-        sendChatbotSuccess($result['answerText'], $result['recommendedMaterials']);
+        sendChatbotSuccess($result['answerText']);
 
     } catch (PDOException $e) {
         error_log('[ChatbotController] DB error: ' . $e->getMessage());
@@ -147,15 +147,13 @@ function validateQuestionInput(): array
 /**
  * Success response
  * @param string $answerText
- * @param array $recommendedMaterials
  */
-function sendChatbotSuccess(string $answerText, array $recommendedMaterials): void
+function sendChatbotSuccess(string $answerText): void
 {
     http_response_code(200);
     echo json_encode([
         'success' => true,
         'answerText' => $answerText,
-        'recommendedMaterials' => $recommendedMaterials,
     ], JSON_UNESCAPED_UNICODE);
 }
 

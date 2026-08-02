@@ -24,7 +24,8 @@ function callGeminiApi(string $systemPrompt, string $studentQuestion): array
 {
     $apiKey = (string) env('GEMINI_API_KEY', '');
     $apiUrl = (string) env(
-        'GEMINI_API_URL'
+        'GEMINI_API_URL',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent'
     );
     $timeoutSeconds = (int) env('GEMINI_TIMEOUT_SECONDS', 15);
 
