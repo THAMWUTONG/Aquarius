@@ -5,7 +5,7 @@
  * Combines important events + study schedule 
  */
 
-require_once __DIR__ . '/../repository/StCalenderRep.php';
+require_once __DIR__ . '/../repository/StCalendarRep.php';
 require_once __DIR__ . '/../config/Date.php';
 
 /**

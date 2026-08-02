@@ -4,6 +4,7 @@ import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
+import { useEffect } from "react"
 
 /**
  * Displays the login page for user authentication,
@@ -12,6 +13,12 @@ import { login } from "../services/authService.jsx"
 function Login() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+
+  useEffect(() => {
+    // Remove any existing user data when the login page is loaded.
+    setUser(null);
+    localStorage.removeItem("user");
+  }, [])
 
   function validateEmail(email) {
     // Regex breakdown:
@@ -46,7 +53,7 @@ function Login() {
     else {
       try {
         const user = await login(formData.get("email"), formData.get("password"));
-        console.log(user);
+
         setUser(user);
         localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {

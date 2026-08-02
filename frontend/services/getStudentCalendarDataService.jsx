@@ -1,5 +1,5 @@
 export async function getStudentCalendarData() {
-  const response = await fetch('/api/StCalender.php', {
+  const response = await fetch('/api/StCalendar.php', {
     method: 'GET'
   });
 

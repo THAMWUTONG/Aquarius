@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { FaComments, FaPaperPlane, FaTimes } from "react-icons/fa";
 import { askChatbot } from "../services/chatbotService.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -72,7 +73,7 @@ function ChatbotBubble() {
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${message.role === "user" ? "bg-sky-600 text-white" : "bg-white text-slate-700 shadow-sm"}`}>
-                  {message.content}
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
                 </div>
               </div>
             ))}

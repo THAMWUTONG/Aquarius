@@ -7,6 +7,5 @@ export async function getPerformanceOverviewData() {
     throw new Error(data.error || 'Failed to retrieve performance overview data.');
   }
 
-  console.log(data)
   return data;
 }

@@ -8,7 +8,7 @@
  *   4. try-catch handling
  */
 
-require_once __DIR__ . '/../logic/StCalenderLog.php';
+require_once __DIR__ . '/../logic/StCalendarLog.php';
 
 function handleCalendarRequest(): void
 {

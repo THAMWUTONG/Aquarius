@@ -11,7 +11,7 @@
 require_once __DIR__ . '/../config/db.php';
 
 /**
- * Fetch the student's important events, today or later only.
+ * Fetch the student's important events for curent month, today or later only.
  *
  * @param int $studentId  users.id (from $_SESSION['user_id'])
  * @return array{success: bool, data?: array, error?: string}
@@ -23,6 +23,8 @@ function getImportantEvents(int $studentId): array
     $sql = "SELECT id, title, event_date, event_type
             FROM important_events
             WHERE student_id = :studentId
+              AND YEAR(event_date) = YEAR(CURDATE())
+              AND MONTH(event_date) = MONTH(CURDATE())
               AND event_date >= CURDATE()
             ORDER BY event_date ASC";
 
@@ -39,7 +41,7 @@ function getImportantEvents(int $studentId): array
 }
 
 /**
- * Fetch the student's study schedule, today or later only.
+ * Fetch the student's study schedule for current month, today or later only.
  * Join topics so the calendar can show the topic title
  *
  * @param int $studentId  users.id (from $_SESSION['user_id'])
@@ -56,6 +58,8 @@ function getStudySchedule(int $studentId): array
             FROM study_schedule ss
             JOIN topics t ON ss.topic_id = t.id
             WHERE ss.student_id = :studentId
+              AND YEAR(ss.scheduled_date) = YEAR(CURDATE())
+              AND MONTH(ss.scheduled_date) = MONTH(CURDATE())
               AND ss.scheduled_date >= CURDATE()
             ORDER BY ss.scheduled_date ASC";
 
