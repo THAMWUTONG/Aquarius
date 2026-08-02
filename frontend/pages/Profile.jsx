@@ -5,7 +5,7 @@ import ProfileInfoField from "../components/ProfileInfoField.jsx";
 import { useAuth } from "../context/AuthContext.jsx"
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { getActiveCourses } from "../services/getStudentProfileData.jsx";
+import { getActiveCourses } from "../services/getStudentProfileDataService.jsx";
 import StudentActiveCourses from "../components/StudentActiveCourses.jsx";
 
 function Profile(){

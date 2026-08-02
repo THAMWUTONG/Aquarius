@@ -1,9 +1,10 @@
-import { Link, useNavigate } from "react-router"
+import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
+import { useEffect } from "react"
 
 /**
  * Displays the login page for user authentication,
@@ -11,7 +12,13 @@ import { login } from "../services/authService.jsx"
  */
 function Login() {
   const navigate = useNavigate();
-  const { setUser } = useAuth(); 
+  const { setUser } = useAuth();
+
+  useEffect(() => {
+    // Remove any existing user data when the login page is loaded.
+    setUser(null);
+    localStorage.removeItem("user");
+  }, [])
 
   function validateEmail(email) {
     // Regex breakdown:
@@ -48,6 +55,7 @@ function Login() {
         const user = await login(formData.get("email"), formData.get("password"));
 
         setUser(user);
+        localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {
           case "student":
             navigate("/student-dashboard");
@@ -63,7 +71,6 @@ function Login() {
       catch (error) {
         alert(error.message);
       }
-      return;
     }
   }
 
@@ -80,7 +87,7 @@ function Login() {
           parallax={false}
           animationSpeed={0.7}
           linesGradient={["#32B7F3", "#0d629e", "#094461"]}
-      />
+        />
       </div>
       <div className="flex justify-center items-center relative z-10 min-h-screen">
         <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
@@ -93,12 +100,11 @@ function Login() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
               <label className="text-sm" htmlFor="email">Email Address</label>
-              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" id="email" name="email" type="text" />
+              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="email" type="text" />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm" htmlFor="password">Password</label>
-              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" id="password" name="password" type="password" />
-              <Link className="text-sm underline" to="/forgot-password">Forgot Password?</Link>
+              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="password" type="password" />
             </div>
             <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all" type="submit">Sign In <FaSignInAlt /></button>
           </form>
