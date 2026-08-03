@@ -18,7 +18,6 @@ function authenticateUser(string $email, string $password): array
     }
 
     updateLastAccess((int) $user["id"]);
-    recordLoginHistory((int) $user["id"]);
 
     return formatAuthUser($user);
 }

@@ -153,18 +153,20 @@ class PlatformRegulationRepository {
         return $stmt->fetch();
     }
 
-    // distinct logged-in users per day, most recent 30 days (see login_history,
-    // populated on each successful login in AuthLogic::authenticateUser)
+    // users per day, most recent 30 days, based on users.last_access.
+    // NOTE: last_access only stores each user's MOST RECENT access, not a full
+    // history, so a user only ever counts toward the single day they most
+    // recently showed up — not every day they were actually active.
     public function getUsageOverTime(): array {
         $pdo = getDbConnection();
         $stmt = $pdo->query("
             SELECT
-                DATE_FORMAT(DATE(logged_in_at), '%b %e') AS date,
-                COUNT(DISTINCT user_id) AS activeUsers
-            FROM login_history
-            WHERE logged_in_at >= (NOW() - INTERVAL 30 DAY)
-            GROUP BY DATE(logged_in_at)
-            ORDER BY DATE(logged_in_at) ASC
+                DATE_FORMAT(DATE(last_access), '%b %e') AS date,
+                COUNT(*) AS activeUsers
+            FROM users
+            WHERE last_access >= (NOW() - INTERVAL 30 DAY)
+            GROUP BY DATE(last_access)
+            ORDER BY DATE(last_access) ASC
         ");
         return $stmt->fetchAll();
     }
