@@ -140,4 +140,9 @@ class PlatformRegulationLogic {
     public function getScoreTrend(): array {
         return $this->repo->getScoreTrendByWeek();
     }
+
+    // distinct active users per day, most recent 30 days
+    public function getUsageOverTime(): array {
+        return $this->repo->getUsageOverTime();
+    }
 }

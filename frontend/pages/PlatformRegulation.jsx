@@ -161,14 +161,14 @@ function PlatformRegulation() {
                                 : handleQuizStatusChange(item.id, "rejected")}
                               type="button"
                             ><FaTimes /></button>
-                            <button
-                              aria-label="Flag"
-                              className="hover:text-amber-600"
-                              onClick={() => activeTab === "materials"
-                                ? handleMaterialStatusChange(item.id, "flagged")
-                                : handleQuizStatusChange(item.id, "flagged")}
-                              type="button"
-                            ><FaFlag /></button>
+                            {activeTab === "quizzes" && (
+                              <button
+                                aria-label="Flag"
+                                className="hover:text-amber-600"
+                                onClick={() => handleQuizStatusChange(item.id, "flagged")}
+                                type="button"
+                              ><FaFlag /></button>
+                            )}
                           </div>
                         </td>
                       </tr>

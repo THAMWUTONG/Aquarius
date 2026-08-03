@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import FloatingLines from "../components/lib/FloatingLines.jsx"
 import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
 import { useEffect } from "react"
+import FloatingLines from "../components/FloatingLines.jsx"
 
 /**
  * Displays the login page for user authentication,
@@ -53,7 +53,7 @@ function Login() {
     else {
       try {
         const user = await login(formData.get("email"), formData.get("password"));
-
+        console.log(user);
         setUser(user);
         localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {

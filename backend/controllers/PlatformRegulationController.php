@@ -128,6 +128,9 @@ class PlatformRegulationController {
             case 'score-trend':
                 $data = $this->logic->getScoreTrend();
                 break;
+            case 'usage-over-time':
+                $data = $this->logic->getUsageOverTime();
+                break;
             case 'performance':
                 $data = $this->logic->getPerformanceData();
                 break;
