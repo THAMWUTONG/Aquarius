@@ -51,3 +51,17 @@ function updateLastAccess(int $userId): void
     $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
     $stmt->execute();
 }
+
+/**
+ * Records a login event so platform-wide daily usage can be reconstructed later.
+ * @param int $userId
+ * @return void
+ */
+function recordLoginHistory(int $userId): void
+{
+    $pdo = getDbConnection();
+
+    $stmt = $pdo->prepare("INSERT INTO login_history (user_id) VALUES (:id)");
+    $stmt->bindValue(':id', $userId, PDO::PARAM_INT);
+    $stmt->execute();
+}

@@ -134,9 +134,39 @@ class PlatformRegulationRepository {
                 (SELECT COUNT(*) FROM quiz_attempts) as total_quiz_attempts,
                 (SELECT COUNT(*) FROM study_materials WHERE regulation_status = 'pending') as pending_materials,
                 (SELECT COUNT(*) FROM quizzes WHERE regulation_status = 'pending') as pending_quizzes,
-                (SELECT COUNT(*) FROM users WHERE last_access >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) as active_users_today
+                (SELECT COUNT(*) FROM users WHERE last_access >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) as active_users_today,
+                (
+                    -- quiz_attempts.score is raw weighted points, not a percentage, and
+                    -- max possible points varies per quiz (sum of that quiz's question
+                    -- weights) — each attempt must be normalized against its OWN quiz's
+                    -- max before averaging across quizzes, or the result is meaningless.
+                    SELECT ROUND(AVG(qa.score / qtot.max_score * 100), 2)
+                    FROM quiz_attempts qa
+                    JOIN (
+                        SELECT quiz_id, SUM(score) AS max_score
+                        FROM quiz_questions
+                        GROUP BY quiz_id
+                    ) qtot ON qtot.quiz_id = qa.quiz_id
+                    WHERE qtot.max_score > 0
+                ) as average_score
         ");
         return $stmt->fetch();
+    }
+
+    // distinct logged-in users per day, most recent 30 days (see login_history,
+    // populated on each successful login in AuthLogic::authenticateUser)
+    public function getUsageOverTime(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("
+            SELECT
+                DATE_FORMAT(DATE(logged_in_at), '%b %e') AS date,
+                COUNT(DISTINCT user_id) AS activeUsers
+            FROM login_history
+            WHERE logged_in_at >= (NOW() - INTERVAL 30 DAY)
+            GROUP BY DATE(logged_in_at)
+            ORDER BY DATE(logged_in_at) ASC
+        ");
+        return $stmt->fetchAll();
     }
     
     // connect db and execute sql query
