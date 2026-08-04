@@ -1,0 +1,12 @@
+# This is a template file of .env, .env stores some environment variables required to run the system.
+# To use this file, replace the name of the file with ".env", then set your Gemini API key in the GEMINI_API_KEY variable below.
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=aquarius
+DB_USER=root
+DB_PASS=
+
+# Gemini API
+GEMINI_API_KEY=
+GEMINI_API_URL=https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent
+GEMINI_TIMEOUT_SECONDS=15

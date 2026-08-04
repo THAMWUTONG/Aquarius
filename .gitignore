@@ -217,5 +217,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Dependencies
-node_modules/.DS_Store
+node_modules/
+
+# macOS
+.DS_Store
 **/.DS_Store

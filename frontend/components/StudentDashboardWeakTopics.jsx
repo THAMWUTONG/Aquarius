@@ -16,7 +16,7 @@ function StudentDashboardWeakTopics({ weakTopicsArray }) {
           You have achieved less than 70% on average in these topics, we recommend you to focus on these areas.
         </p>
         {weakTopicsArray.map((weakTopic) => (
-          <div key={weakTopic.id} class="flex justify-between items-center p-4 rounded-lg border border-sky-500 bg-sky-50">
+          <div key={weakTopic.id} className="flex justify-between items-center p-4 rounded-lg border border-sky-500 bg-sky-50">
             <div>
               <h3 className="text-sm font-bold">{weakTopic.topicTitle}</h3>
               <p className="text-xs text-gray-400">Average Score: {weakTopic.averagePercentage}%</p>

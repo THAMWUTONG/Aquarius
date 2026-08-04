@@ -1,8 +1,10 @@
-import { Link, useNavigate } from "react-router"
+import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import logo from "../assets/placeholder.png"
+import logo from "../assets/Aquarius.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
+import { useEffect } from "react"
+import FloatingLines from "../components/lib/FloatingLines.jsx"
 
 /**
  * Displays the login page for user authentication,
@@ -10,7 +12,13 @@ import { login } from "../services/authService.jsx"
  */
 function Login() {
   const navigate = useNavigate();
-  const { setUser } = useAuth(); 
+  const { setUser } = useAuth();
+
+  useEffect(() => {
+    // Remove any existing user data when the login page is loaded.
+    setUser(null);
+    localStorage.removeItem("user");
+  }, [])
 
   function validateEmail(email) {
     // Regex breakdown:
@@ -47,6 +55,7 @@ function Login() {
         const user = await login(formData.get("email"), formData.get("password"));
         console.log(user);
         setUser(user);
+        localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {
           case "student":
             navigate("/student-dashboard");
@@ -62,19 +71,28 @@ function Login() {
       catch (error) {
         alert(error.message);
       }
-      return;
     }
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <div className="absolute w-full h-full z-0">
-
+        <FloatingLines 
+          enabledWaves={["bottom","middle","top"]}
+          lineCount={7}
+          lineDistance={8}
+          bendRadius={8}
+          bendStrength={-2}
+          interactive={false}
+          parallax={false}
+          animationSpeed={0.7}
+          linesGradient={["#32B7F3", "#0d629e", "#094461"]}
+        />
       </div>
       <div className="flex justify-center items-center relative z-10 min-h-screen">
         <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
           <div className="text-center mb-8">
-            <img className="inline w-14 h-14" src={logo} alt="Aquarius Logo"/>
+            <img className="inline w-40 h-40" src={logo} alt="Aquarius Logo"/>
             <h2 className="text-xl font-bold">Welcome to Aquarius</h2>
             <p>Your Personalized Learning Assistant</p>
           </div>
@@ -82,12 +100,11 @@ function Login() {
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-2">
               <label className="text-sm" htmlFor="email">Email Address</label>
-              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" id="email" name="email" type="text" />
+              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="email" type="text" />
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm" htmlFor="password">Password</label>
-              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" id="password" name="password" type="password" />
-              <Link className="text-sm underline" to="/forgot-password">Forgot Password?</Link>
+              <input className="p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500" name="password" type="password" />
             </div>
             <button className="flex justify-center items-center gap-2 w-full rounded-lg py-2 font-semibold text-lg text-white bg-sky-500 hover:bg-sky-600 transition-all" type="submit">Sign In <FaSignInAlt /></button>
           </form>

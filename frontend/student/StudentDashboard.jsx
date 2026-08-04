@@ -5,7 +5,7 @@ import { NavLink, useNavigate } from "react-router"
 import { useEffect, useState } from "react"
 import { FaBookOpen, FaCalendar, FaExclamationTriangle, FaGraduationCap, FaRegCalendar } from "react-icons/fa";
 import DashboardStatisticCard from "../components/DashboardStatisticCard.jsx"
-import { getStudentDashboardData } from "../services/getStudentDashboardData.jsx"
+import { getStudentDashboardData } from "../services/getStudentDashboardDataService.jsx"
 import StudentDashboardUpcomingEvent from "../components/StudentDashboardUpcomingEvent.jsx"
 import StudentDashboardWeakTopics from "../components/StudentDashboardWeakTopics.jsx"
 
@@ -38,7 +38,7 @@ function StudentDashboard(){
     fetchStudentDashboardData()
   }, [user])
 
-  if (!user || user.role !== "student" || loading) {
+  if (!user || user.role !== "student") {
     return null;
   }
   else {
@@ -62,33 +62,39 @@ function StudentDashboard(){
                 </NavLink>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <DashboardStatisticCard icon={ <FaBookOpen /> } displayedTitle={ "Enrolled Courses" } displayedData={ studentDashboardData.enrolledCourses.length } />
-              <DashboardStatisticCard icon={ <FaGraduationCap /> } displayedTitle={ "Quizzes Completed" } displayedData={ studentDashboardData.totalQuizzesAttempted } />
-              <DashboardStatisticCard icon={ <FaCalendar /> } displayedTitle={ "Next Event" } displayedData={ studentDashboardData.upcomingEvents.length === 0 ? "None" : studentDashboardData.upcomingEvents[0].title } />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-2 p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
-                <div className="flex items-center gap-2">
-                  <FaExclamationTriangle className="text-sky-500" />
-                  <h2 className="text-lg font-bold">Focus Areas</h2>
+            {loading && <p className="rounded-xl bg-white p-6 shadow-sm text-gray-600">Loading Dashboard Data...</p>}
+
+            {!loading && (
+              <>
+                <div className="grid grid-cols-3 gap-4">
+                  <DashboardStatisticCard icon={ <FaBookOpen /> } displayedTitle={ "Enrolled Courses" } displayedData={ studentDashboardData.enrolledCourses.length } />
+                  <DashboardStatisticCard icon={ <FaGraduationCap /> } displayedTitle={ "Quizzes Completed" } displayedData={ studentDashboardData.totalQuizzesAttempted } />
+                  <DashboardStatisticCard icon={ <FaCalendar /> } displayedTitle={ "Next Event" } displayedData={ studentDashboardData.upcomingEvents.length === 0 ? "None" : studentDashboardData.upcomingEvents[0].title } />
                 </div>
-                <hr className="text-gray-300"></hr>
-                <div className="space-y-2">
-                  <StudentDashboardWeakTopics weakTopicsArray={studentDashboardData.weakTopics} />
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2 p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
+                    <div className="flex items-center gap-2">
+                      <FaExclamationTriangle className="text-sky-500" />
+                      <h2 className="text-lg font-bold">Focus Areas</h2>
+                    </div>
+                    <hr className="text-gray-300"></hr>
+                    <div className="space-y-2">
+                      <StudentDashboardWeakTopics weakTopicsArray={studentDashboardData.weakTopics} />
+                    </div>
+                  </div>
+                  <div className="p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
+                    <div className="flex items-center gap-2">
+                      <FaRegCalendar className="text-sky-500" />
+                      <h2 className="font-bold">Upcoming Events</h2>
+                    </div>
+                    <hr className="text-gray-300"></hr>
+                    <div className="space-y-4">
+                      <StudentDashboardUpcomingEvent eventsArray={studentDashboardData.upcomingEvents} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
-                <div className="flex items-center gap-2">
-                  <FaRegCalendar className="text-sky-500" />
-                  <h2 className="font-bold">Upcoming Events</h2>
-                </div>
-                <hr className="text-gray-300"></hr>
-                <div className="space-y-4">
-                  <StudentDashboardUpcomingEvent eventsArray={studentDashboardData.upcomingEvents} />
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </main>
       </div>

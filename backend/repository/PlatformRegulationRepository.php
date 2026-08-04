@@ -269,8 +269,13 @@ class PlatformRegulationRepository {
         $stmt = $pdo->query("
             SELECT
                 DATE_FORMAT(MIN(completed_at), '%b %e') AS period,
-                ROUND(AVG(score), 2) AS averageScore
-            FROM quiz_attempts
+                ROUND(AVG(qa.score / qmax.quiz_max_score * 100), 2) AS averageScore
+            FROM quiz_attempts qa
+            JOIN (
+                SELECT quiz_id, SUM(score) AS quiz_max_score
+                FROM quiz_questions
+                GROUP BY quiz_id
+            ) qmax ON qmax.quiz_id = qa.quiz_id
             WHERE completed_at >= (NOW() - INTERVAL 12 WEEK)
             GROUP BY YEARWEEK(completed_at)
             ORDER BY YEARWEEK(completed_at) ASC

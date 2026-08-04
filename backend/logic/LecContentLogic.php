@@ -585,6 +585,7 @@ function formatLecturerQuizzes(array $rows): array
             'comments' => (int) $row['comments'],
             'durationMin' => isset($row['duration_min']) ? (int) $row['duration_min'] : null,
             'isPublished' => (bool) $row['is_published'],
+            'regulationStatus' => $row['regulation_status'],
         ];
     }, $rows);
 }
@@ -611,6 +612,7 @@ function formatLecturerMaterials(array $rows): array
             'topic' => $row['topic'],
             'fileType' => $row['file_type'],
             'fileName' => $row['file_name'],
+            'filePath' => $row['file_path'],
             'prerequisites' => (int) $row['prerequisites'],
             'regulationStatus' => $row['regulation_status'],
             'uploadedAt' => !empty($row['uploaded_at'])

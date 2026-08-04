@@ -19,7 +19,7 @@ function StudentDashboardUpcomingEvent({ eventsArray }) {
           {eventIcons[event.eventType]}
           <div>
             <h3 className="text-sm font-bold">{event.title}</h3>
-            <p className="text-xs text-gray-400">{event.eventDate + " • " + event.eventType}</p>
+            <p className="text-xs text-gray-400">{event.eventDate} • {event.eventType}</p>
           </div>
         </div>
       ))

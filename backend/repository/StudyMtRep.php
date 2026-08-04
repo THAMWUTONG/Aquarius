@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/db.php';
 
 /**
  * get Course         -> title, id
- * get Study Material -> id, title, descrip, file path, file type
+ * get Study Material -> id, title, descrip, file path, file type, prerequisites
  * get Topic          -> title (Topic name)
  * 
  * Only show the Study Material that is "Approved"
@@ -22,6 +22,7 @@ function getAllMaterialsForStudent(int $studentId): array
                 sm.description,
                 sm.file_path,
                 sm.file_type,
+                GROUP_CONCAT(prereq.title ORDER BY prereq.title SEPARATOR ' , ') AS prerequisite_title,
                 t.title AS topic_title,
                 c.id AS course_id,
                 c.title AS course_title,
@@ -29,14 +30,32 @@ function getAllMaterialsForStudent(int $studentId): array
             FROM study_materials sm
             JOIN topics t ON sm.topic_id = t.id
             JOIN courses c ON t.course_id = c.id
+            LEFT JOIN study_material_prerequisites smp ON sm.id = smp.material_id
+            LEFT JOIN study_materials prereq ON smp.prerequisite_id = prereq.id
+            JOIN enrollment en
+                ON en.course_id = c.id
+                AND en.student_id = :studentId1
+                AND en.status = 'active'
             LEFT JOIN bookmarks b
-                ON b.material_id = sm.id AND b.student_id = :studentId
+                ON b.material_id = sm.id AND b.student_id = :studentId2
             WHERE sm.regulation_status = 'approved'
+            GROUP BY
+                sm.id,
+                sm.title,
+                sm.description,
+                sm.file_path,
+                sm.file_type,
+                t.title,
+                c.id,
+                c.title,
+                b.id
             ORDER BY sm.uploaded_at DESC";
+
 
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':studentId', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':studentId1', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':studentId2', $studentId, PDO::PARAM_INT);
         $stmt->execute();
 
         return ['success' => true, 'data' => $stmt->fetchAll()];

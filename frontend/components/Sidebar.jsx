@@ -1,7 +1,7 @@
-import logo from "../assets/placeholder.png";
+import logo from "../assets/Aquarius.png";
 import { useAuth } from "../context/AuthContext.jsx";
 import SidebarNavItems from "./SidebarNavItems.jsx";
-import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog, FaUsersCog, FaShieldAlt, FaClipboardList, FaHistory } from "react-icons/fa";
+import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog, FaUsersCog, FaChartBar, FaShieldAlt, FaUserGraduate, FaHistory } from "react-icons/fa";
 
 function Sidebar() {
   const { user } = useAuth()
@@ -22,7 +22,7 @@ function Sidebar() {
     }
     else if (user && user.role === "lecturer") {
       return (
-        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/lecturer-dashboard" />
           <SidebarNavItems displayedText="Manage Quizzes" icon={ <FaGraduationCap /> } href="/manage-quizzes" />
           <SidebarNavItems displayedText="Manage Materials" icon={ <FaFileAlt /> } href="/manage-materials" />
@@ -34,17 +34,17 @@ function Sidebar() {
     }
     else if (user && user.role === "admin") {
       return (
-        <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <SidebarNavItems displayedText="Dashboard" icon={ <FaHome /> } href="/admin-dashboard" />
           <SidebarNavItems displayedText="Manage Users" icon={ <FaUsersCog /> } href="/manage-users" />
-          <SidebarNavItems displayedText="Manage Enrollment" icon={ <FaClipboardList /> } href="/manage-enrollment" />
-          <SidebarNavItems displayedText="Platform Statistics" icon={ <FaChartLine /> } href="/platform-statistics" />
+          <SidebarNavItems displayedText="Platform Statistics" icon={ <FaChartBar /> } href="/platform-statistics" />
           <SidebarNavItems displayedText="Platform Regulation" icon={ <FaShieldAlt /> } href="/platform-regulation" />
+          <SidebarNavItems displayedText="Manage Enrollment" icon={ <FaUserGraduate /> } href="/manage-enrollment" />
           <SidebarNavItems displayedText="Audit Log" icon={ <FaHistory /> } href="/audit-log" />
           <SidebarNavItems displayedText="Profile" icon={ <FaUser /> } href="/admin-profile" />
           <SidebarNavItems displayedText="Logout" icon={ <FaSignOutAlt /> } href="/" />
         </nav>
-      );
+      )
     }
   }
 
@@ -53,7 +53,7 @@ function Sidebar() {
     <aside className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col shrink-0">
       {/* Logo Section */}
       <div className="flex items-center gap-3 p-6">
-        <img className="w-10 h-10 object-contain" src={logo} alt="Aquarius Logo"/>
+        <img className="w-14 h-14" src={logo} alt="Aquarius Logo"/>
         <div>
           <h1 className="text-xl font-bold leading-none text-slate-800">Aquarius</h1>
           <span className="text-[10px] text-sky-500 font-semibold tracking-wider uppercase">Study Platform</span>
