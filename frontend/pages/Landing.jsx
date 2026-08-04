@@ -1,3 +1,5 @@
+import { useAuth } from "../context/AuthContext.jsx"
+import { useEffect } from "react"
 import { Link } from "react-router"
 import { FaBook, FaGraduationCap, FaChartLine, FaUsersCog, FaChalkboardTeacher, FaCalendarAlt, FaRobot } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
@@ -8,6 +10,14 @@ import logo from "../assets/Aquarius.png"
  * visitor and routes them to /login. No auth required to view this page.
  */
 function Landing() {
+  const { setUser } = useAuth();
+
+  useEffect(() => {
+    // Remove any existing user data when the login page is loaded.
+    setUser(null);
+    localStorage.removeItem("user");
+  }, [])
+  
   return (
     <div className="min-h-screen bg-white">
       {/* Hero: full-bleed animated water-current background, shared with the Login page for brand consistency */}
