@@ -33,6 +33,7 @@ export async function fetchPlatformStatistics() {
     throw new Error(stats.message || 'Failed to load platform statistics');
   }
 
+  console.log(performanceTrend);
   return {
     averageScore: stats.average_score,
     activeUsersToday: stats.active_users_today,
