@@ -12,7 +12,7 @@ function ChatbotBubble() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || user?.role !== "student") {
       setIsOpen(false);
       setMessages([]);
       setDraft("");
@@ -45,7 +45,7 @@ function ChatbotBubble() {
     }
   }
 
-  if (!user) {
+  if (!user || user?.role !== "student") {
     return null;
   }
 

@@ -134,9 +134,41 @@ class PlatformRegulationRepository {
                 (SELECT COUNT(*) FROM quiz_attempts) as total_quiz_attempts,
                 (SELECT COUNT(*) FROM study_materials WHERE regulation_status = 'pending') as pending_materials,
                 (SELECT COUNT(*) FROM quizzes WHERE regulation_status = 'pending') as pending_quizzes,
-                (SELECT COUNT(*) FROM users WHERE last_access >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) as active_users_today
+                (SELECT COUNT(*) FROM users WHERE last_access >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) as active_users_today,
+                (
+                    -- quiz_attempts.score is raw weighted points, not a percentage, and
+                    -- max possible points varies per quiz (sum of that quiz's question
+                    -- weights) — each attempt must be normalized against its OWN quiz's
+                    -- max before averaging across quizzes, or the result is meaningless.
+                    SELECT ROUND(AVG(qa.score / qtot.max_score * 100), 2)
+                    FROM quiz_attempts qa
+                    JOIN (
+                        SELECT quiz_id, SUM(score) AS max_score
+                        FROM quiz_questions
+                        GROUP BY quiz_id
+                    ) qtot ON qtot.quiz_id = qa.quiz_id
+                    WHERE qtot.max_score > 0
+                ) as average_score
         ");
         return $stmt->fetch();
+    }
+
+    // users per day, most recent 30 days, based on users.last_access.
+    // NOTE: last_access only stores each user's MOST RECENT access, not a full
+    // history, so a user only ever counts toward the single day they most
+    // recently showed up — not every day they were actually active.
+    public function getUsageOverTime(): array {
+        $pdo = getDbConnection();
+        $stmt = $pdo->query("
+            SELECT
+                DATE_FORMAT(DATE(last_access), '%b %e') AS date,
+                COUNT(*) AS activeUsers
+            FROM users
+            WHERE last_access >= (NOW() - INTERVAL 30 DAY)
+            GROUP BY DATE(last_access)
+            ORDER BY DATE(last_access) ASC
+        ");
+        return $stmt->fetchAll();
     }
     
     // connect db and execute sql query
@@ -237,8 +269,13 @@ class PlatformRegulationRepository {
         $stmt = $pdo->query("
             SELECT
                 DATE_FORMAT(MIN(completed_at), '%b %e') AS period,
-                ROUND(AVG(score), 2) AS averageScore
-            FROM quiz_attempts
+                ROUND(AVG(qa.score / qmax.quiz_max_score * 100), 2) AS averageScore
+            FROM quiz_attempts qa
+            JOIN (
+                SELECT quiz_id, SUM(score) AS quiz_max_score
+                FROM quiz_questions
+                GROUP BY quiz_id
+            ) qmax ON qmax.quiz_id = qa.quiz_id
             WHERE completed_at >= (NOW() - INTERVAL 12 WEEK)
             GROUP BY YEARWEEK(completed_at)
             ORDER BY YEARWEEK(completed_at) ASC

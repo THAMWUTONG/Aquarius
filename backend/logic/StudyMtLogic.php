@@ -41,6 +41,7 @@ function formatMaterials(array $rows): array
             'description' => $row['description'],
             'fileType' => $row['file_type'],
             'filePath' => $row['file_path'],
+            'prerequisites' => $row['prerequisite_title'],
             'isBookmarked' => (bool) $row['Bookmarked'],
         ];
     }, $rows);

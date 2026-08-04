@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import FloatingLines from "../components/lib/FloatingLines.jsx"
-import logo from "../assets/placeholder.png"
+import logo from "../assets/Aquarius.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
 import { useEffect } from "react"
+import FloatingLines from "../components/lib/FloatingLines.jsx"
 
 /**
  * Displays the login page for user authentication,
@@ -53,7 +53,7 @@ function Login() {
     else {
       try {
         const user = await login(formData.get("email"), formData.get("password"));
-
+        console.log(user);
         setUser(user);
         localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {
@@ -92,7 +92,7 @@ function Login() {
       <div className="flex justify-center items-center relative z-10 min-h-screen">
         <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
           <div className="text-center mb-8">
-            <img className="inline w-14 h-14" src={logo} alt="Aquarius Logo"/>
+            <img className="inline w-40 h-40" src={logo} alt="Aquarius Logo"/>
             <h2 className="text-xl font-bold">Welcome to Aquarius</h2>
             <p>Your Personalized Learning Assistant</p>
           </div>

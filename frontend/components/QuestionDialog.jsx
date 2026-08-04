@@ -41,7 +41,7 @@ function QuestionDialog({ quizId, quizTitle, quizTopic, durationInMinutes, quest
 
     const answers = questionList.map((question) => ({
       questionId: question.id,
-      selected: formData.get(`question-${question.id}`)
+      answerId: formData.get(`question-${question.id}`)
     }))
 
     try {
