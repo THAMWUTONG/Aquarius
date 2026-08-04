@@ -4,7 +4,7 @@ import logo from "../assets/placeholder.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
 import { useEffect } from "react"
-import FloatingLines from "../components/FloatingLines.jsx"
+import FloatingLines from "../components/lib/FloatingLines.jsx"
 
 /**
  * Displays the login page for user authentication,

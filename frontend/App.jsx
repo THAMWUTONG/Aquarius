@@ -19,13 +19,15 @@ import PlatformRegulation from "./pages/PlatformRegulation.jsx"
 import ManageEnrollment from "./pages/ManageEnrollment.jsx"
 import AuditLog from "./pages/AuditLog.jsx"
 import AdminProfile from "./pages/AdminProfile.jsx"
+import Landing from "./pages/Landing.jsx"
 
 
 function App() {
   return (
     <>
       <Routes>
-        <Route index element={<Login />} />
+        <Route index element={<Landing />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/lecturer-dashboard" element={<LecturerDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
