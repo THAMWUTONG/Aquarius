@@ -150,7 +150,12 @@ class PlatformRegulationRepository {
                     WHERE qtot.max_score > 0
                 ) as average_score
         ");
-        return $stmt->fetch();
+        $stats = $stmt->fetch();
+        // PDO returns DECIMAL columns as strings (unlike the COUNT()-based int
+        // columns above) — cast explicitly so the JSON response is a real
+        // number, not a quoted string the frontend chart libs have to coerce.
+        $stats['average_score'] = $stats['average_score'] !== null ? (float) $stats['average_score'] : null;
+        return $stats;
     }
 
     // users per day, most recent 30 days, based on users.last_access.
@@ -178,29 +183,49 @@ class PlatformRegulationRepository {
     // fetch all the data
     public function getCoursePerformance(): array {
         $pdo = getDbConnection();
+        // qa.score is raw weighted points, not a percentage, and the max possible
+        // points varies per quiz (sum of that quiz's question weights) — every
+        // comparison/average below normalizes against each attempt's OWN quiz max
+        // via qtot, or mixing point scales across quizzes would be meaningless.
         $stmt = $pdo->query("
-            SELECT 
+            SELECT
                 c.id as course_id,
                 c.title as course_title,
                 COUNT(DISTINCT e.student_id) as total_students,
-                COALESCE(AVG(qa.score), 0) as average_score,
+                COALESCE(AVG(qa.score / qtot.max_score * 100), 0) as average_score,
                 COALESCE(COUNT(DISTINCT qa.student_id), 0) as students_tested,
                 COALESCE((
-                    SELECT COUNT(DISTINCT qa2.student_id) 
-                    FROM quiz_attempts qa2 
-                    JOIN quizzes q2 ON qa2.quiz_id = q2.id 
-                    JOIN topics t2 ON q2.topic_id = t2.id 
-                    WHERE t2.course_id = c.id AND qa2.score >= 60
+                    SELECT COUNT(DISTINCT qa2.student_id)
+                    FROM quiz_attempts qa2
+                    JOIN quizzes q2 ON qa2.quiz_id = q2.id
+                    JOIN topics t2 ON q2.topic_id = t2.id
+                    JOIN (
+                        SELECT quiz_id, SUM(score) AS max_score
+                        FROM quiz_questions
+                        GROUP BY quiz_id
+                    ) qtot2 ON qtot2.quiz_id = qa2.quiz_id
+                    WHERE t2.course_id = c.id AND qtot2.max_score > 0
+                          AND (qa2.score / qtot2.max_score * 100) >= 60
                 ), 0) as students_passed
             FROM courses c
             LEFT JOIN enrollment e ON c.id = e.course_id AND e.status = 'active'
             LEFT JOIN topics t ON c.id = t.course_id
             LEFT JOIN quizzes q ON t.id = q.topic_id
             LEFT JOIN quiz_attempts qa ON q.id = qa.quiz_id
+            LEFT JOIN (
+                SELECT quiz_id, SUM(score) AS max_score
+                FROM quiz_questions
+                GROUP BY quiz_id
+            ) qtot ON qtot.quiz_id = qa.quiz_id AND qtot.max_score > 0
             GROUP BY c.id
             ORDER BY c.title
         ");
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        // Same PDO string-vs-number issue as getPlatformStats() above.
+        foreach ($rows as &$row) {
+            $row['average_score'] = (float) $row['average_score'];
+        }
+        return $rows;
     }
     
     // suspect every action by admin (create admin, disenrolled admin/student)
@@ -248,12 +273,21 @@ class PlatformRegulationRepository {
     // below threshold on that topic's quizzes
     public function getSystemWideWeakTopics(float $threshold = 70.0): array {
         $pdo = getDbConnection();
+        // Same normalization concern as getCoursePerformance() above: qa.score is
+        // raw points, not a percentage, so it must be divided by that quiz's max
+        // possible points (qtot) before comparing against a 0-100 threshold.
         $stmt = $pdo->prepare("
             SELECT t.title AS name,
-                   COUNT(DISTINCT CASE WHEN qa.score < :threshold THEN qa.student_id END) AS count
+                   COUNT(DISTINCT CASE WHEN (qa.score / qtot.max_score * 100) < :threshold THEN qa.student_id END) AS count
             FROM quiz_attempts qa
             JOIN quizzes q ON qa.quiz_id = q.id
             JOIN topics t ON q.topic_id = t.id
+            JOIN (
+                SELECT quiz_id, SUM(score) AS max_score
+                FROM quiz_questions
+                GROUP BY quiz_id
+            ) qtot ON qtot.quiz_id = qa.quiz_id
+            WHERE qtot.max_score > 0
             GROUP BY t.id, t.title
             HAVING count > 0
             ORDER BY count DESC
@@ -280,6 +314,11 @@ class PlatformRegulationRepository {
             GROUP BY YEARWEEK(completed_at)
             ORDER BY YEARWEEK(completed_at) ASC
         ");
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        // Same PDO string-vs-number issue as getPlatformStats() above.
+        foreach ($rows as &$row) {
+            $row['averageScore'] = (float) $row['averageScore'];
+        }
+        return $rows;
     }
 }

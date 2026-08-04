@@ -1,7 +1,7 @@
 import { Link } from "react-router"
 import { FaBook, FaGraduationCap, FaChartLine, FaUsersCog, FaChalkboardTeacher, FaCalendarAlt, FaRobot } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
-import logo from "../assets/placeholder.png"
+import logo from "../assets/Aquarius.png"
 
 /**
  * Public marketing landing page. Introduces Aquarius to a signed-out

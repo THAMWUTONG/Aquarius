@@ -12,6 +12,7 @@ export default defineConfig({
   ],
   server: {
     port: 7777,
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       // Intercepts api calls and forward them to XAMPP.
       '/api': {

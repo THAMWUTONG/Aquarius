@@ -70,3 +70,24 @@ function handleLogin(): void
         echo json_encode(["message" => $e->getMessage()]);
     }
 }
+
+/**
+ * Destroys the current session so a stolen/left-open session cookie can no
+ * longer be used to reach admin/lecturer/student endpoints after logout.
+ */
+function handleLogout(): void
+{
+    setAuthHeaders();
+
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+        http_response_code(204);
+        return;
+    }
+
+    session_start();
+    $_SESSION = [];
+    session_destroy();
+
+    http_response_code(200);
+    echo json_encode(["message" => "Logged out successfully"]);
+}
