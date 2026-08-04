@@ -2,7 +2,7 @@ import { useState } from "react"
 import { FaBookmark, FaDownload } from "react-icons/fa"
 import { toggleBookmark } from "../services/bookmarkService.jsx"
 
-function StudyMaterialCard({ id, courseName, title, topicName, description, type, prerequisites = "", initialIsBookmarked }) {
+function StudyMaterialCard({ id, courseName, title, topicName, description, type, prerequisites = "", downloadPath, initialIsBookmarked }) {
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
   const [loading, setLoading] = useState(false)
 
@@ -18,6 +18,15 @@ function StudyMaterialCard({ id, courseName, title, topicName, description, type
       setLoading(false)
     }
   }
+  
+  function handleDownload() {
+    const link = document.createElement("a")
+    link.href = "../../" + downloadPath
+    link.download = title
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
@@ -25,7 +34,7 @@ function StudyMaterialCard({ id, courseName, title, topicName, description, type
         <p className="p-1 rounded-lg text-sm text-sky-500 bg-sky-100">{courseName}</p>
         <div className="flex gap-2">
           <button disabled={loading} className={`p-2 border border-gray-300 rounded-lg hover:bg-gray-100 ${isBookmarked ? "bg-sky-100 text-sky-500 hover:bg-sky-200" : "bg-white"} disabled:opacity-50`} onClick={handleToggle} disabled={loading}><FaBookmark /></button>
-          <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100"><FaDownload /></button>
+          <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-100" onClick={handleDownload}><FaDownload /></button>
         </div>
       </div>
       <div>

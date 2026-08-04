@@ -53,7 +53,6 @@ function Login() {
     else {
       try {
         const user = await login(formData.get("email"), formData.get("password"));
-        console.log(user);
         setUser(user);
         localStorage.setItem("user", JSON.stringify(user))
         switch (user.role) {

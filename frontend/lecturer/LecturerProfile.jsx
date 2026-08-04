@@ -266,7 +266,7 @@ function LecturerProfile() {
             </div>
 
             {/* Save Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <div className="flex items-center justify-end pt-2">
               <button
                 type="submit"
                 disabled={loading}

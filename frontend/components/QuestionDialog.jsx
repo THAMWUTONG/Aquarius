@@ -94,7 +94,7 @@ function QuestionDialog({ quizId, quizTitle, quizTopic, durationInMinutes, quest
             ))}
           </div>
           <div className="flex justify-end items-center p-4 rounded-b-xl text-white bg-sky-500">
-            <button className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 transition-all" type="submit" disabled={submitting}>
+            <button className="px-4 py-2 rounded-lg text-sm font-bold text-sky-500 bg-white hover:bg-gray-100 disabled:opacity-50 transition-all" type="submit" disabled={submitting}>
               {submitting ? 'Submitting...' : 'Submit Answers'}
             </button>
           </div>
