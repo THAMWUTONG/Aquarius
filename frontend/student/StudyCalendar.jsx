@@ -103,7 +103,7 @@ function StudyCalendar(){
     }
   }
   
-  if (!user || user.role !== "student" || loading) {
+  if (!user || user.role !== "student") {
     return null;
   }
   else{
@@ -113,13 +113,19 @@ function StudyCalendar(){
         <main className="flex-1 min-w-0 flex flex-col">
           <HeaderBar displayedTitle="Study Calendar" userName={ user.name } userRole={ user.role } />
           <div className="flex-1 p-8 overflow-y-auto space-y-6">
-            <div className="flex justify-end gap-2">
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsMarkEventOpen(true)}>&#43; Mark Important Events</button>
-              <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsGenerateScheduleOpen(true)}>Generate Study Schedule</button>
-            </div>
-            <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
-              <StudentStudyCalendar importantEvents={calendarData.importantEvents} studySchedule={calendarData.studySchedule} />
-            </div>
+            {loading && <p className="rounded-xl bg-white p-6 shadow-sm text-gray-600">Loading Calendar Data...</p>}
+
+            {!loading && ( 
+              <>
+                <div className="flex justify-end gap-2">
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsMarkEventOpen(true)}>&#43; Mark Important Events</button>
+                  <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsGenerateScheduleOpen(true)}>Generate Study Schedule</button>
+                </div>
+                <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+                  <StudentStudyCalendar importantEvents={calendarData.importantEvents} studySchedule={calendarData.studySchedule} />
+                </div>
+              </>
+            )}
           </div>
         </main>
 

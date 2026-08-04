@@ -1,6 +1,6 @@
 import { FaArrowRight } from "react-icons/fa"
 
-function QuizCard({ id, courseName, title, topicName, bestScore, durationInMinutes, numberOfQuestions, onStartQuiz }) {
+function QuizCard({ courseName, title, topicName, bestScore, durationInMinutes, numberOfQuestions, onStartQuiz }) {
   return (
     <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
       <p className="w-fit p-1 rounded-lg text-sm text-sky-500 bg-sky-100">{courseName}</p>

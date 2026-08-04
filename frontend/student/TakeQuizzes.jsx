@@ -88,7 +88,7 @@ function TakeQuizzes(){
           )}
 
           {showQuestionDialog && selectedQuiz && (
-            <QuestionDialog quizTitle={selectedQuiz.title} quizTopic={selectedQuiz.topicName} durationInMinutes={selectedQuiz.durationInMinutes} questionList={questionList} onClose={closeQuestionDialog} />
+            <QuestionDialog quizId={selectedQuiz.id} quizTitle={selectedQuiz.title} quizTopic={selectedQuiz.topicName} durationInMinutes={selectedQuiz.durationInMinutes} questionList={questionList} onClose={closeQuestionDialog} />
           )}
         </div>
       </main>

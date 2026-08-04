@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router"
 import { FaSignInAlt } from "react-icons/fa"
-import logo from "../assets/placeholder.png"
+import logo from "../assets/Aquarius.png"
 import { useAuth } from "../context/AuthContext.jsx"
 import { login } from "../services/authService.jsx"
 import { useEffect } from "react"
@@ -92,7 +92,7 @@ function Login() {
       <div className="flex justify-center items-center relative z-10 min-h-screen">
         <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
           <div className="text-center mb-8">
-            <img className="inline w-14 h-14" src={logo} alt="Aquarius Logo"/>
+            <img className="inline w-40 h-40" src={logo} alt="Aquarius Logo"/>
             <h2 className="text-xl font-bold">Welcome to Aquarius</h2>
             <p>Your Personalized Learning Assistant</p>
           </div>

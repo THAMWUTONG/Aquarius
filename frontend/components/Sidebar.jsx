@@ -1,4 +1,4 @@
-import logo from "../assets/placeholder.png";
+import logo from "../assets/Aquarius.png";
 import { useAuth } from "../context/AuthContext.jsx";
 import SidebarNavItems from "./SidebarNavItems.jsx";
 import { FaHome, FaBook, FaGraduationCap, FaChartLine, FaCalendarAlt, FaUser, FaSignOutAlt, FaFileAlt, FaCog, FaUsersCog, FaChartBar, FaShieldAlt, FaUserGraduate, FaHistory } from "react-icons/fa";
@@ -53,7 +53,7 @@ function Sidebar() {
     <aside className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col shrink-0">
       {/* Logo Section */}
       <div className="flex items-center gap-3 p-6">
-        <img className="w-10 h-10 object-contain" src={logo} alt="Aquarius Logo"/>
+        <img className="w-14 h-14" src={logo} alt="Aquarius Logo"/>
         <div>
           <h1 className="text-xl font-bold leading-none text-slate-800">Aquarius</h1>
           <span className="text-[10px] text-sky-500 font-semibold tracking-wider uppercase">Study Platform</span>

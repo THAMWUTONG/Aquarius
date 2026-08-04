@@ -1,7 +1,7 @@
 import { Link } from "react-router"
 import { FaBook, FaGraduationCap, FaChartLine, FaUsersCog, FaChalkboardTeacher, FaCalendarAlt, FaRobot } from "react-icons/fa"
 import FloatingLines from "../components/lib/FloatingLines.jsx"
-import logo from "../assets/placeholder.png"
+import logo from "../assets/Aquarius.png"
 
 /**
  * Public marketing landing page. Introduces Aquarius to a signed-out
@@ -29,7 +29,7 @@ function Landing() {
         <div className="relative z-10 flex min-h-screen flex-col">
           <nav className="flex items-center justify-between px-8 py-6">
             <div className="flex items-center gap-3">
-              <img className="h-10 w-10" src={logo} alt="Aquarius Logo" />
+              <img className="h-14 w-14" src={logo} alt="Aquarius Logo" />
               <span className="text-2xl font-bold text-white">Aquarius</span>
             </div>
             <Link

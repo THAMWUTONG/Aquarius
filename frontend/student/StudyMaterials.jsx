@@ -33,7 +33,7 @@ function StudyMaterials(){
     }
 
     loadMaterials()
-  }, [user, navigate])
+  }, [user, navigate, showBookmarked])
   
   // For every retrieved material, construct an object with id and title property.
   // Filter out duplicates by verifying the indices.
@@ -80,7 +80,7 @@ function StudyMaterials(){
 
           <div className="grid grid-cols-2 gap-4">
             {filteredMaterials.map((material) => (
-              <StudyMaterialCard key={material.id} id={material.id} courseName={material.courseTitle} title={material.title} topicName={material.topicTitle} description={material.description} type={material.fileType} initialIsBookmarked={material.isBookmarked} />
+              <StudyMaterialCard key={material.id} id={material.id} courseName={material.courseTitle} title={material.title} topicName={material.topicTitle} description={material.description} type={material.fileType} prerequisites={material.prerequisites} initialIsBookmarked={material.isBookmarked} />
             ))}
           </div>
         </div>
