@@ -59,8 +59,10 @@ function handleSubmitQuizRequest(): void
         return;
     }
 
+    $feedback = $inputData['feedback'] ?? '';
+
     try {
-        $result = submitQuizAttemptData($studentId, $quizId, $answers);
+        $result = submitQuizAttemptData($studentId, $quizId, $answers, $feedback);
 
         if (!$result['success']) {
             // Quiz doesn't exist, isn't published/approved, or this

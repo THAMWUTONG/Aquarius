@@ -18,8 +18,9 @@ require_once __DIR__ . '/../repository/SubmitQuizRep.php';
  * @param int   $quizId
  * @param array $submittedAnswers  [ ['questionId' => int, 'answerId' => int|null], ... ]
  * @return array{success: bool, result?: array, error?: string}
+ * @param string $feedback
  */
-function submitQuizAttemptData(int $studentId, int $quizId, array $submittedAnswers): array
+function submitQuizAttemptData(int $studentId, int $quizId, array $submittedAnswers, string $feedback): array
 {
     $gradingResult = getQuizGradingData($studentId, $quizId);
     if (!$gradingResult['success']) {
@@ -39,7 +40,7 @@ function submitQuizAttemptData(int $studentId, int $quizId, array $submittedAnsw
 
     $grade = gradeAttempt($answerKey, $selections);
 
-    $saveResult = saveQuizAttempt($studentId, $quizId, $grade['rawScore'], $grade['details']);
+    $saveResult = saveQuizAttempt($studentId, $quizId, $grade['rawScore'], $grade['details'], $feedback);
     if (!$saveResult['success']) {
         return ['success' => false, 'error' => $saveResult['error']];
     }
@@ -56,6 +57,7 @@ function submitQuizAttemptData(int $studentId, int $quizId, array $submittedAnsw
             'correctCount' => $grade['correctCount'],
             'totalQuestions' => count($answerKey),
         ],
+        'explanations' => array_column($grade['details'], 'explanation'),
     ];
 }
 
@@ -82,6 +84,7 @@ function buildAnswerKey(array $rows): array
                 'score' => (float) $row['question_score'],
                 'correctAnswerId' => null,
                 'validAnswerIds' => [],
+                'explanation' => $row['question_explanation'] ?? null,
             ];
         }
 
@@ -179,6 +182,7 @@ function gradeAttempt(array $answerKey, array $selections): array
         $details[] = [
             'questionId' => $questionId,
             'selectedAnswerId' => $selectedAnswerId,
+            'explanation' => $question['explanation'] ?? null,
         ];
     }
 

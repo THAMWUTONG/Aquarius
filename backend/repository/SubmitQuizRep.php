@@ -36,6 +36,7 @@ function getQuizGradingData(int $studentId, int $quizId): array
     $sql = "SELECT
                 qq.id AS question_id,
                 qq.score AS question_score,
+                qq.explanation AS question_explanation,
                 qa.id AS answer_id,
                 qa.is_correct
             FROM quiz_questions qq
@@ -69,6 +70,7 @@ function getQuizGradingData(int $studentId, int $quizId): array
  * Write one attempt + one detail row per question, atomically.
  * If any detail row fails, the whole attempt is rolled back so
  * never end up with a scored attempt that has no answer records.
+ * Also updates quiz feedback.
  *
  * @param int   $studentId
  * @param int   $quizId
@@ -76,7 +78,7 @@ function getQuizGradingData(int $studentId, int $quizId): array
  * @param array $details     [ ['questionId' => int, 'selectedAnswerId' => int|null], ... ]
  * @return array{success: bool, attemptId?: int, error?: string}
  */
-function saveQuizAttempt(int $studentId, int $quizId, float $score, array $details): array
+function saveQuizAttempt(int $studentId, int $quizId, float $score, array $details, string $feedback): array
 {
     $pdo = getDbConnection();
 
@@ -110,6 +112,19 @@ function saveQuizAttempt(int $studentId, int $quizId, float $score, array $detai
             }
 
             $detailStmt->execute();
+        }
+
+        if (!empty($feedback)) {
+            $updateFeedbackSql = "INSERT INTO quiz_feedback (student_id, quiz_id, comment)
+                                  VALUES (:studentId, :quizId, :feedback1)
+                                  ON DUPLICATE KEY UPDATE comment = :feedback2";
+
+            $updateFeedbackStmt = $pdo->prepare($updateFeedbackSql);
+            $updateFeedbackStmt->bindValue(':feedback1', $feedback, PDO::PARAM_STR);
+            $updateFeedbackStmt->bindValue(':feedback2', $feedback, PDO::PARAM_STR);
+            $updateFeedbackStmt->bindValue(':studentId', $studentId, PDO::PARAM_INT);
+            $updateFeedbackStmt->bindValue(':quizId', $quizId, PDO::PARAM_INT);
+            $updateFeedbackStmt->execute();
         }
 
         $pdo->commit();
