@@ -201,13 +201,8 @@ function getLecturerMaterials(int $lecturerUserId): array
                 c.title AS course,
                 t.title AS topic,
                 sm.file_type,
-                sm.file_name,
-                sm.file_path,
                 sm.regulation_status,
-                sm.uploaded_at,
-                (SELECT COUNT(*)
-                   FROM study_material_prerequisites p
-                  WHERE p.material_id = sm.id) AS prerequisites
+                sm.uploaded_at
             FROM lecturers l
             JOIN courses c ON c.lecturer_id = l.lecturer_id
             JOIN topics t  ON t.course_id = c.id
@@ -223,6 +218,174 @@ function getLecturerMaterials(int $lecturerUserId): array
         return ['success' => true, 'data' => $stmt->fetchAll()];
     } catch (PDOException $e) {
         error_log('[LecContentRepository] getLecturerMaterials failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Every prerequisite LINK under this lecturer's materials, one row per pair.
+ *
+ * A prerequisite is itself a study material - "you should read Python Basics
+ * before Database Systems" - so both sides of the pair are study_materials rows
+ * and the second join is back onto the same table under an alias.
+ *
+ * This is fetched as ONE flat query rather than per material: the table lists
+ * every material at once, and a per-row lookup would be N+1 queries for a page
+ * that already knows it needs all of them.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, data?: array, error?: string}
+ */
+function getMaterialPrerequisites(int $lecturerUserId): array
+{
+    $pdo = getDbConnection();
+
+    $sql = "SELECT
+                p.material_id,
+                p.prerequisite_id,
+                pre.title AS prerequisite_title
+            FROM lecturers l
+            JOIN courses c ON c.lecturer_id = l.lecturer_id
+            JOIN topics t  ON t.course_id = c.id
+            JOIN study_materials sm ON sm.topic_id = t.id
+            JOIN study_material_prerequisites p ON p.material_id = sm.id
+            JOIN study_materials pre ON pre.id = p.prerequisite_id
+            WHERE l.id = :lecturerId
+            ORDER BY pre.title ASC";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true, 'data' => $stmt->fetchAll()];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] getMaterialPrerequisites failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Every prerequisite link on the platform, as raw (material, prerequisite) pairs.
+ *
+ * Deliberately NOT scoped to one lecturer, unlike getMaterialPrerequisites().
+ * That one answers "what do I show this lecturer"; this one answers "would this
+ * new link close a loop", and a loop can run through a material the current
+ * lecturer cannot see - so a lecturer-scoped view would miss exactly the edge
+ * that completes the cycle. No titles are selected, so nothing about another
+ * lecturer's content leaks out of this function.
+ *
+ * @return array{success: bool, data?: array, error?: string}
+ */
+function getAllPrerequisiteEdges(): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->query(
+            "SELECT material_id, prerequisite_id FROM study_material_prerequisites"
+        );
+
+        return ['success' => true, 'data' => $stmt->fetchAll()];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] getAllPrerequisiteEdges failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * True when EVERY one of these material ids sits under a course the lecturer owns.
+ *
+ * lecturerOwnsMaterial() answers the same question for a single id; a chosen
+ * prerequisite list has to be checked as a set, otherwise a lecturer could
+ * point their own material at a colleague's private material and expose its
+ * title through the materials table.
+ *
+ * @param int   $lecturerUserId
+ * @param int[] $materialIds
+ * @return bool
+ */
+function lecturerOwnsAllMaterials(int $lecturerUserId, array $materialIds): bool
+{
+    if (count($materialIds) === 0) {
+        return true;
+    }
+
+    $pdo = getDbConnection();
+
+    // One named placeholder per id - the list length varies per request, so it
+    // cannot be a fixed prepared statement, and interpolating the ids straight
+    // into the SQL would be an injection point.
+    $placeholders = [];
+    foreach (array_keys($materialIds) as $index) {
+        $placeholders[] = ':id' . $index;
+    }
+
+    $sql = "SELECT COUNT(DISTINCT sm.id)
+            FROM lecturers l
+            JOIN courses c ON c.lecturer_id = l.lecturer_id
+            JOIN topics t  ON t.course_id = c.id
+            JOIN study_materials sm ON sm.topic_id = t.id
+            WHERE l.id = :lecturerId
+              AND sm.id IN (" . implode(', ', $placeholders) . ")";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+    foreach (array_values($materialIds) as $index => $materialId) {
+        $stmt->bindValue(':id' . $index, $materialId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    return (int) $stmt->fetchColumn() === count($materialIds);
+}
+
+/**
+ * Replaces one material's prerequisite list with exactly the ids given.
+ *
+ * Delete-then-insert rather than a diff: the modal always submits the complete
+ * list, so "what the lecturer unticked" is simply everything not resubmitted.
+ * Both statements run in one transaction, because a delete that succeeds while
+ * the inserts fail would silently wipe a dependency chain the lecturer meant to
+ * keep. An empty list is a valid request - prerequisites are optional.
+ *
+ * @param int   $materialId
+ * @param int[] $prerequisiteIds already validated and de-duplicated
+ * @return array{success: bool, error?: string}
+ */
+function replaceMaterialPrerequisites(int $materialId, array $prerequisiteIds): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $pdo->beginTransaction();
+
+        $deleteStmt = $pdo->prepare(
+            "DELETE FROM study_material_prerequisites WHERE material_id = :materialId"
+        );
+        $deleteStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+        $deleteStmt->execute();
+
+        if (count($prerequisiteIds) > 0) {
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO study_material_prerequisites (material_id, prerequisite_id)
+                 VALUES (:materialId, :prerequisiteId)"
+            );
+
+            foreach ($prerequisiteIds as $prerequisiteId) {
+                $insertStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+                $insertStmt->bindValue(':prerequisiteId', $prerequisiteId, PDO::PARAM_INT);
+                $insertStmt->execute();
+            }
+        }
+
+        $pdo->commit();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('[LecContentRepository] replaceMaterialPrerequisites failed: ' . $e->getMessage());
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
     }
 }
@@ -398,10 +561,14 @@ function getQuizFeedback(int $quizId): array
 }
 
 /**
- * Inserts one study material row after its file has been stored on disk.
+ * Inserts one study material row.
+ *
+ * file_name and file_path are not written: materials are metadata only, so the
+ * two columns stay NULL on every new row. They are left on the table rather
+ * than dropped so the already-uploaded materials keep pointing at their files.
  *
  * @param int   $lecturerUserId becomes study_materials.uploaded_by
- * @param array $material       title, description, file_name, file_path, file_type, topic_id
+ * @param array $material       title, description, file_type, topic_id
  * @return array{success: bool, materialId?: int, error?: string}
  */
 function createMaterial(int $lecturerUserId, array $material): array
@@ -411,14 +578,12 @@ function createMaterial(int $lecturerUserId, array $material): array
     try {
         $stmt = $pdo->prepare(
             "INSERT INTO study_materials
-                (title, description, file_name, file_path, file_type, topic_id, uploaded_by, regulation_status)
+                (title, description, file_type, topic_id, uploaded_by, regulation_status)
              VALUES
-                (:title, :description, :fileName, :filePath, :fileType, :topicId, :uploadedBy, 'pending')"
+                (:title, :description, :fileType, :topicId, :uploadedBy, 'pending')"
         );
         $stmt->bindValue(':title', $material['title'], PDO::PARAM_STR);
         $stmt->bindValue(':description', $material['description'], PDO::PARAM_STR);
-        $stmt->bindValue(':fileName', $material['file_name'], PDO::PARAM_STR);
-        $stmt->bindValue(':filePath', $material['file_path'], PDO::PARAM_STR);
         $stmt->bindValue(':fileType', $material['file_type'], PDO::PARAM_STR);
         $stmt->bindValue(':topicId', $material['topic_id'], PDO::PARAM_INT);
         $stmt->bindValue(':uploadedBy', $lecturerUserId, PDO::PARAM_INT);
@@ -432,30 +597,25 @@ function createMaterial(int $lecturerUserId, array $material): array
 }
 
 /**
- * Deletes one study material and reports the stored file path so the caller can
- * remove the file afterwards.
+ * Deletes one study material.
  *
- * The path is read BEFORE the delete - afterwards the row is gone and the file
- * on disk would be orphaned with no way to find it.
+ * study_material_prerequisites declares ON DELETE CASCADE on both of its
+ * foreign keys, so this also clears the links pointing AT this material - a
+ * material that no longer exists cannot stay a prerequisite of another one.
  *
  * @param int $materialId
- * @return array{success: bool, filePath?: ?string, error?: string}
+ * @return array{success: bool, error?: string}
  */
 function deleteMaterialById(int $materialId): array
 {
     $pdo = getDbConnection();
 
     try {
-        $pathStmt = $pdo->prepare("SELECT file_path FROM study_materials WHERE id = :materialId");
-        $pathStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
-        $pathStmt->execute();
-        $filePath = $pathStmt->fetchColumn();
-
         $stmt = $pdo->prepare("DELETE FROM study_materials WHERE id = :materialId");
         $stmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
         $stmt->execute();
 
-        return ['success' => true, 'filePath' => $filePath === false ? null : $filePath];
+        return ['success' => true];
     } catch (PDOException $e) {
         error_log('[LecContentRepository] deleteMaterialById failed: ' . $e->getMessage());
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];

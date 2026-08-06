@@ -45,7 +45,19 @@ function getLecturerMaterialsData(int $lecturerUserId): array
         $materials = [];
         error_log('[LecContentLogic] materials failed for lecturer ' . $lecturerUserId);
     } else {
-        $materials = formatLecturerMaterials($result['data']);
+        // A failed prerequisite lookup is reported as a partial error rather
+        // than failing the whole page: the materials themselves are still
+        // usable, they just render with no dependency chain.
+        $prerequisiteResult = getMaterialPrerequisites($lecturerUserId);
+        if (!$prerequisiteResult['success']) {
+            $partialErrors[] = 'prerequisites';
+            error_log('[LecContentLogic] prerequisites failed for lecturer ' . $lecturerUserId);
+        }
+
+        $materials = formatLecturerMaterials(
+            $result['data'],
+            groupPrerequisitesByMaterial($prerequisiteResult['data'] ?? [])
+        );
     }
 
     return [
@@ -337,39 +349,165 @@ function getLecturerQuizFeedbackData(int $lecturerUserId, int $quizId): array
 }
 
 /**
- * Where uploaded material files are written, and the largest file accepted.
- * The directory sits next to the frontend so XAMPP can serve the files back.
- */
-const LEC_UPLOAD_DIR = __DIR__ . '/../../uploads';
-const LEC_MAX_UPLOAD_BYTES = 52428800; // 50 MB
-
-/**
- * Extensions permitted per file_type enum value.
+ * Reads the submitted prerequisite list into a clean array of material ids.
  *
- * The stored file is renamed to a random string, so this list is not protecting
- * the filename - it is refusing to persist executable content at all. Without
- * it a lecturer could upload material.php into a directory XAMPP happily
- * executes, which is remote code execution on the whole site.
+ * The picker sends its selection over multipart/form-data alongside the file,
+ * which cannot carry a real array, so three shapes are accepted:
+ *   ['3', '7']       - a genuine array (JSON callers)
+ *   '3,7'            - the comma-joined string the modals send
+ *   '' / absent      - no prerequisites
+ *
+ * Duplicates are collapsed because the table declares a unique pair, and
+ * $selfId is dropped because a material cannot be its own prerequisite - both
+ * would otherwise be rejected by the database as a 500 rather than handled.
+ *
+ * @param mixed $raw
+ * @param int   $selfId 0 when the material does not exist yet
+ * @return int[]
  */
-function lecAllowedUploadExtensions(): array
+function normalisePrerequisiteIds($raw, int $selfId = 0): array
 {
-    return [
-        'pdf' => ['pdf'],
-        'video' => ['mp4', 'mov', 'avi', 'mkv', 'webm'],
-        'slides' => ['ppt', 'pptx', 'odp'],
-        'document' => ['doc', 'docx', 'odt', 'txt', 'rtf'],
-    ];
+    if (is_string($raw)) {
+        $raw = $raw === '' ? [] : explode(',', $raw);
+    }
+    if (!is_array($raw)) {
+        return [];
+    }
+
+    $ids = [];
+    foreach ($raw as $value) {
+        $id = (int) trim((string) $value);
+        if ($id > 0 && $id !== $selfId) {
+            $ids[$id] = $id;
+        }
+    }
+
+    return array_values($ids);
 }
 
 /**
- * Validates an uploaded material and stores it.
+ * True when making $prerequisiteIds the prerequisites of $materialId would
+ * close a loop somewhere in the chain.
+ *
+ * The database only blocks the one-step case (chk_prereq_not_self). It cannot
+ * see the indirect one: A requires B, B requires C, then someone makes C
+ * require A. Nothing would be flagged on insert, but a student following the
+ * chain would never reach a starting point, and any code walking it would
+ * recurse forever.
+ *
+ * So this walks the existing chain outwards from each proposed prerequisite and
+ * fails if it ever arrives back at the material being edited.
+ *
+ * @param int   $materialId
+ * @param int[] $prerequisiteIds
+ * @param array $edges material_id => [prerequisite_id, ...]
+ * @return bool
+ */
+function prerequisitesWouldCycle(int $materialId, array $prerequisiteIds, array $edges): bool
+{
+    $queue = $prerequisiteIds;
+    $seen = [];
+
+    while (count($queue) > 0) {
+        $current = array_shift($queue);
+
+        if ($current === $materialId) {
+            return true;
+        }
+        // Guards against looping forever on a cycle that does not involve
+        // $materialId but is reachable from it.
+        if (isset($seen[$current])) {
+            continue;
+        }
+        $seen[$current] = true;
+
+        foreach ($edges[$current] ?? [] as $next) {
+            $queue[] = $next;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Checks a prerequisite selection without writing anything.
+ *
+ * Kept separate from the write so callers can reject a bad selection BEFORE
+ * they change anything else about the material - otherwise a lecturer who picks
+ * an invalid prerequisite still has their title and topic quietly updated by
+ * the same failed submit.
  *
  * @param int   $lecturerUserId
- * @param array $payload $_POST fields: title, description, file_type, topic_id
- * @param array $file    the $_FILES['file'] entry, or [] when nothing was sent
+ * @param int   $materialId      0 for a material that does not exist yet
+ * @param int[] $prerequisiteIds already normalised
+ * @return array{success: bool, status: int, message?: string}
+ */
+function validateMaterialPrerequisites(int $lecturerUserId, int $materialId, array $prerequisiteIds): array
+{
+    if (count($prerequisiteIds) === 0) {
+        return ['success' => true, 'status' => 200];
+    }
+
+    if (!lecturerOwnsAllMaterials($lecturerUserId, $prerequisiteIds)) {
+        return [
+            'success' => false,
+            'status' => 403,
+            'message' => 'A selected prerequisite is not one of your study materials.',
+        ];
+    }
+
+    // A brand-new material has no id yet, so nothing can point at it and no
+    // chain can lead back to it.
+    if ($materialId > 0) {
+        $existing = getAllPrerequisiteEdges();
+        if (!$existing['success']) {
+            return [
+                'success' => false,
+                'status' => 500,
+                'message' => "We couldn't save the prerequisites. Please try again later.",
+            ];
+        }
+
+        $edges = [];
+        foreach ($existing['data'] as $row) {
+            $edges[(int) $row['material_id']][] = (int) $row['prerequisite_id'];
+        }
+
+        if (prerequisitesWouldCycle($materialId, $prerequisiteIds, $edges)) {
+            return [
+                'success' => false,
+                'status' => 400,
+                'message' => 'That prerequisite creates a loop - the material would end up required before itself.',
+            ];
+        }
+    }
+
+    return ['success' => true, 'status' => 200];
+}
+
+/**
+ * The values study_materials.file_type accepts.
+ *
+ * Materials no longer carry a file, so this is now a plain classification of
+ * the material - it still has to match the column's enum exactly, or the insert
+ * fails at the database with a 500 instead of a readable message.
+ *
+ * @return string[]
+ */
+function lecMaterialTypes(): array
+{
+    return ['pdf', 'video', 'slides', 'document'];
+}
+
+/**
+ * Validates a new study material and stores it.
+ *
+ * @param int   $lecturerUserId
+ * @param array $payload $_POST fields: title, description, file_type, topic_id,
+ *                       prerequisite_ids
  * @return array{success: bool, status: int, message?: string, materialId?: int}
  */
-function createLecturerMaterial(int $lecturerUserId, array $payload, array $file): array
+function createLecturerMaterial(int $lecturerUserId, array $payload): array
 {
     $title = trim((string) ($payload['title'] ?? ''));
     $description = trim((string) ($payload['description'] ?? ''));
@@ -383,115 +521,49 @@ function createLecturerMaterial(int $lecturerUserId, array $payload, array $file
         return ['success' => false, 'status' => 400, 'message' => 'Please choose a topic for this material.'];
     }
 
-    $allowed = lecAllowedUploadExtensions();
-    if (!isset($allowed[$fileType])) {
+    if (!in_array($fileType, lecMaterialTypes(), true)) {
         return ['success' => false, 'status' => 400, 'message' => 'Unsupported material type.'];
     }
     if (!lecturerOwnsTopic($lecturerUserId, $topicId)) {
         return ['success' => false, 'status' => 403, 'message' => 'That topic does not belong to your courses.'];
     }
 
-    $stored = lecStoreUploadedFile($file, $allowed[$fileType]);
-    if (isset($stored['error'])) {
-        return ['success' => false, 'status' => $stored['status'], 'message' => $stored['error']];
+    // Passing 0 as the material id says "this row does not exist yet", which
+    // skips the cycle walk - nothing can point at a material that has no id.
+    $prerequisiteIds = normalisePrerequisiteIds($payload['prerequisite_ids'] ?? []);
+    $valid = validateMaterialPrerequisites($lecturerUserId, 0, $prerequisiteIds);
+    if (!$valid['success']) {
+        return $valid;
     }
 
     $result = createMaterial($lecturerUserId, [
         'title' => $title,
         'description' => $description,
-        'file_name' => $stored['originalName'],
-        'file_path' => $stored['relativePath'],
         'file_type' => $fileType,
         'topic_id' => $topicId,
     ]);
 
     if (!$result['success']) {
-        // The row failed, so the file on disk is now unreferenced - remove it
-        // rather than leaving the uploads directory to grow with orphans.
-        @unlink($stored['absolutePath']);
         return ['success' => false, 'status' => 500, 'message' => "We couldn't save the material. Please try again later."];
+    }
+
+    // The links are a second write, so a failure here would otherwise leave a
+    // material saved with the prerequisites silently missing. Undoing the whole
+    // create keeps "the save failed" honest - the lecturer resubmits the same
+    // form rather than hunting for which half landed.
+    if (count($prerequisiteIds) > 0) {
+        $linked = replaceMaterialPrerequisites($result['materialId'], $prerequisiteIds);
+        if (!$linked['success']) {
+            deleteMaterialById($result['materialId']);
+            return ['success' => false, 'status' => 500, 'message' => "We couldn't save the material. Please try again later."];
+        }
     }
 
     return ['success' => true, 'status' => 201, 'materialId' => $result['materialId']];
 }
 
 /**
- * Moves one uploaded file into the uploads directory under a generated name.
- *
- * The client-supplied filename is never used as the stored name: it can contain
- * traversal sequences, and on a case-insensitive filesystem a name like
- * 'notes.PhP' can still be executed. Only the extension is inspected, and only
- * to check it against the allow-list.
- *
- * @param array    $file    a $_FILES entry
- * @param string[] $allowedExtensions
- * @return array{relativePath?: string, absolutePath?: string, originalName?: string, error?: string, status?: int}
- */
-function lecStoreUploadedFile(array $file, array $allowedExtensions): array
-{
-    if (empty($file) || !isset($file['error'])) {
-        return ['error' => 'Please attach a file.', 'status' => 400];
-    }
-
-    if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) {
-        return ['error' => 'That file is too large to upload.', 'status' => 400];
-    }
-    if ($file['error'] === UPLOAD_ERR_NO_FILE) {
-        return ['error' => 'Please attach a file.', 'status' => 400];
-    }
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        error_log('[LecContentLogic] upload failed with PHP error code ' . $file['error']);
-        return ['error' => 'The file could not be uploaded. Please try again.', 'status' => 500];
-    }
-
-    // Confirms the file really came through PHP's upload handler and is not an
-    // arbitrary server path someone injected into the request.
-    if (!is_uploaded_file($file['tmp_name'])) {
-        return ['error' => 'The file could not be uploaded. Please try again.', 'status' => 400];
-    }
-
-    if ((int) $file['size'] > LEC_MAX_UPLOAD_BYTES) {
-        return ['error' => 'That file is too large. The limit is 50 MB.', 'status' => 400];
-    }
-
-    $originalName = (string) ($file['name'] ?? 'upload');
-    $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-    if (!in_array($extension, $allowedExtensions, true)) {
-        return [
-            'error' => 'That file type is not allowed for this material type. Expected: .' . implode(', .', $allowedExtensions),
-            'status' => 400,
-        ];
-    }
-
-    if (!is_dir(LEC_UPLOAD_DIR) && !mkdir(LEC_UPLOAD_DIR, 0775, true) && !is_dir(LEC_UPLOAD_DIR)) {
-        error_log('[LecContentLogic] could not create upload directory ' . LEC_UPLOAD_DIR);
-        return ['error' => 'The file could not be stored. Please try again later.', 'status' => 500];
-    }
-
-    try {
-        $generatedName = bin2hex(random_bytes(16)) . '.' . $extension;
-    } catch (Throwable $e) {
-        $generatedName = uniqid('material_', true) . '.' . $extension;
-    }
-
-    $absolutePath = LEC_UPLOAD_DIR . '/' . $generatedName;
-
-    if (!move_uploaded_file($file['tmp_name'], $absolutePath)) {
-        error_log('[LecContentLogic] move_uploaded_file failed for ' . $absolutePath);
-        return ['error' => 'The file could not be stored. Please try again later.', 'status' => 500];
-    }
-
-    return [
-        'relativePath' => 'uploads/' . $generatedName,
-        'absolutePath' => $absolutePath,
-        // Trimmed to the column width so a very long filename cannot truncate-error.
-        'originalName' => substr(basename($originalName), 0, 255),
-    ];
-}
-
-/**
- * Deletes a material the lecturer owns, plus its file on disk.
+ * Deletes a material the lecturer owns.
  *
  * @param int $lecturerUserId
  * @param int $materialId
@@ -509,18 +581,6 @@ function deleteLecturerMaterial(int $lecturerUserId, int $materialId): array
     $result = deleteMaterialById($materialId);
     if (!$result['success']) {
         return ['success' => false, 'status' => 500, 'message' => "We couldn't delete the material. Please try again later."];
-    }
-
-    // Best-effort file cleanup. The row is already gone, so a failure here
-    // leaves a harmless orphan file - not a reason to report failure to the
-    // lecturer. Resolved against the uploads directory so a tampered path
-    // cannot reach outside it.
-    if (!empty($result['filePath'])) {
-        $candidate = realpath(__DIR__ . '/../../' . $result['filePath']);
-        $uploadRoot = realpath(LEC_UPLOAD_DIR);
-        if ($candidate !== false && $uploadRoot !== false && str_starts_with($candidate, $uploadRoot)) {
-            @unlink($candidate);
-        }
     }
 
     return ['success' => true, 'status' => 200];
@@ -553,6 +613,21 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
         return ['success' => false, 'status' => 403, 'message' => 'That topic does not belong to your courses.'];
     }
 
+    // Only touched when the caller actually sent the field. An empty value IS a
+    // meaningful update - it is how the lecturer clears every prerequisite - so
+    // the distinction has to be "was the key present", not "is it empty".
+    $updatePrerequisites = array_key_exists('prerequisite_ids', $payload);
+    $prerequisiteIds = $updatePrerequisites
+        ? normalisePrerequisiteIds($payload['prerequisite_ids'], $materialId)
+        : [];
+
+    if ($updatePrerequisites) {
+        $valid = validateMaterialPrerequisites($lecturerUserId, $materialId, $prerequisiteIds);
+        if (!$valid['success']) {
+            return $valid;
+        }
+    }
+
     $result = updateMaterialById($materialId, [
         'title' => $title,
         'description' => trim((string) ($payload['description'] ?? '')),
@@ -561,6 +636,17 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
 
     if (!$result['success']) {
         return ['success' => false, 'status' => 500, 'message' => "We couldn't update the material. Please try again later."];
+    }
+
+    if ($updatePrerequisites) {
+        $saved = replaceMaterialPrerequisites($materialId, $prerequisiteIds);
+        if (!$saved['success']) {
+            return [
+                'success' => false,
+                'status' => 500,
+                'message' => "We couldn't save the prerequisites. Please try again later.",
+            ];
+        }
     }
 
     return ['success' => true, 'status' => 200];
@@ -591,29 +677,55 @@ function formatLecturerQuizzes(array $rows): array
 }
 
 /**
+ * Turns the flat prerequisite pair rows into material_id => [{id, title}, ...].
+ *
+ * @param array $rows material_id, prerequisite_id, prerequisite_title
+ * @return array<int, array<int, array{id: int, title: string}>>
+ */
+function groupPrerequisitesByMaterial(array $rows): array
+{
+    $grouped = [];
+
+    foreach ($rows as $row) {
+        $grouped[(int) $row['material_id']][] = [
+            'id' => (int) $row['prerequisite_id'],
+            'title' => $row['prerequisite_title'],
+        ];
+    }
+
+    return $grouped;
+}
+
+/**
  * file_type is stored lowercase ('pdf', 'slides', 'video', 'document') but the
  * table renders a badge in capitals. Uppercasing is presentation, so the raw
  * value is passed through as 'fileType' and the badge text is built in JSX.
  *
- * prerequisites is returned as a NUMBER, not the string '1 topics' the mock
- * data used - the frontend decides how to word it.
+ * No file fields are returned: materials are metadata only, so there is nothing
+ * for the frontend to link to or download.
+ *
+ * prerequisites is an ARRAY of the study materials that should be studied
+ * first, each as {id, title} - not a count, and not a topic. The frontend needs
+ * the ids to pre-tick the edit modal's picker and the titles to render chips,
+ * and a material with no prerequisites correctly comes back as [].
  *
  * @param array $rows
+ * @param array $prerequisitesByMaterial from groupPrerequisitesByMaterial()
  * @return array
  */
-function formatLecturerMaterials(array $rows): array
+function formatLecturerMaterials(array $rows, array $prerequisitesByMaterial = []): array
 {
-    return array_map(function (array $row) {
+    return array_map(function (array $row) use ($prerequisitesByMaterial) {
+        $id = (int) $row['id'];
+
         return [
-            'id' => (int) $row['id'],
+            'id' => $id,
             'title' => $row['title'],
             'description' => $row['description'],
             'course' => $row['course'],
             'topic' => $row['topic'],
             'fileType' => $row['file_type'],
-            'fileName' => $row['file_name'],
-            'filePath' => $row['file_path'],
-            'prerequisites' => (int) $row['prerequisites'],
+            'prerequisites' => $prerequisitesByMaterial[$id] ?? [],
             'regulationStatus' => $row['regulation_status'],
             'uploadedAt' => !empty($row['uploaded_at'])
                 ? substr($row['uploaded_at'], 0, 10)

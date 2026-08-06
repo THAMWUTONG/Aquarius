@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaLink, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import EditMaterialButton from '../components/EditMaterialButton.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import UploadMaterialModal from './UploadMaterials.jsx';
@@ -11,15 +11,18 @@ import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 import { deleteMaterial } from '../services/lecturerContentService.jsx';
 
 // Initial dataset matching database relationships (Materials -> Topics -> Courses)
+//
+// prerequisites lists OTHER study materials that should be studied first, the
+// same {id, title} shape the API returns - so 'Control Flow Video' expects the
+// student to have gone through 'Python Variables Slides' already. A material
+// may have several, or none at all.
 const initialMaterials = [
   {
     id: 1,
     title: 'Python Variables Slides',
     course: 'Introduction to Programming',
     topic: 'Variables & Data Types',
-    type: 'SLIDES',
-    fileName: 'python_vars.pdf',
-    fileHref: '/materials/cs101/python_vars.pdf',
+    prerequisites: [],
     regulationStatus: 'approved',
   },
   {
@@ -27,9 +30,7 @@ const initialMaterials = [
     title: 'Control Flow Video',
     course: 'Introduction to Programming',
     topic: 'If-else, loops, and logical operators',
-    type: 'VIDEO',
-    fileName: 'control_flow.mp4',
-    fileHref: '/materials/cs101/control_flow.mp4',
+    prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
     regulationStatus: 'approved',
   },
   {
@@ -37,9 +38,10 @@ const initialMaterials = [
     title: 'Functions Cheat Sheet',
     course: 'Introduction to Programming',
     topic: 'Defining reusable functions',
-    type: 'PDF',
-    fileName: 'functions_ref.pdf',
-    fileHref: '/materials/cs101/functions_ref.pdf',
+    prerequisites: [
+      { id: 1, title: 'Python Variables Slides' },
+      { id: 2, title: 'Control Flow Video' },
+    ],
     regulationStatus: 'approved',
   },
   {
@@ -47,9 +49,7 @@ const initialMaterials = [
     title: 'Linked Lists Document',
     course: 'Data Structures & Algorithms',
     topic: 'Linear data structures',
-    type: 'DOCUMENT',
-    fileName: 'linked_lists.docx',
-    fileHref: '/materials/cs201/linked_lists.docx',
+    prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
     regulationStatus: 'approved',
   },
   {
@@ -57,9 +57,7 @@ const initialMaterials = [
     title: 'Sorting Algorithms Video',
     course: 'Data Structures & Algorithms',
     topic: 'Bubble, merge, quick sort',
-    type: 'VIDEO',
-    fileName: 'sorting_algo.mp4',
-    fileHref: '/materials/cs201/sorting_algo.mp4',
+    prerequisites: [{ id: 4, title: 'Linked Lists Document' }],
     regulationStatus: 'pending',
   },
   {
@@ -67,9 +65,7 @@ const initialMaterials = [
     title: 'ER Diagram Tutorial',
     course: 'Database Systems',
     topic: 'ER Modelling',
-    type: 'PDF',
-    fileName: 'er_diagram.pdf',
-    fileHref: '/materials/db301/er_diagram.pdf',
+    prerequisites: [],
     regulationStatus: 'approved',
   },
   {
@@ -77,9 +73,7 @@ const initialMaterials = [
     title: 'SQL Query Practice Set',
     course: 'Database Systems',
     topic: 'SQL Queries',
-    type: 'PDF',
-    fileName: 'sql_exercises.pdf',
-    fileHref: '/materials/db301/sql_exercises.pdf',
+    prerequisites: [{ id: 6, title: 'ER Diagram Tutorial' }],
     regulationStatus: 'approved',
   },
 ];
@@ -92,12 +86,9 @@ function ManageMaterials() {
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [actionError, setActionError] = useState('');
 
-  // Fetch the lecturer's real materials from the PHP backend.
-  // The API field names are mapped onto the shape this table already expects,
-  // so none of the JSX below has to change:
-  //   fileType (lowercase)  -> type       (the badge CSS uppercases it)
-  //   filePath              -> fileHref   (root-relative, for the link)
-  // regulationStatus is passed straight through - StatusBadge does the styling.
+  // Fetch the lecturer's real materials from the PHP backend, mapping the API
+  // field names onto the shape this table expects. regulationStatus is passed
+  // straight through - StatusBadge does the styling.
   const fetchMaterials = async () => {
     try {
       const data = await getLecturerMaterials();
@@ -110,12 +101,10 @@ function ManageMaterials() {
           description: item.description,
           course: item.course,
           topic: item.topic,
-          type: item.fileType,
-          fileName: item.fileName,
-          // Stored two ways: 'uploads/<hash>.pdf' for real uploads and
-          // '/materials/...' for the seeded rows. Normalising to exactly one
-          // leading slash makes both usable as a root-relative href.
-          fileHref: item.filePath ? `/${item.filePath.replace(/^\/+/, '')}` : null,
+          // Other study materials to be covered first, as [{id, title}].
+          // Defaulted to [] so the table and the picker never have to guard
+          // against undefined when the prerequisite lookup came back empty.
+          prerequisites: item.prerequisites ?? [],
           regulationStatus: item.regulationStatus,
         }))
       );
@@ -151,7 +140,7 @@ function ManageMaterials() {
 
   const handleDeleteClick = async (material) => {
     const confirmed = window.confirm(
-      `Delete "${material.title}"? The uploaded file is removed too. This cannot be undone.`
+      `Delete "${material.title}"? It is also removed from any other material that lists it as a prerequisite. This cannot be undone.`
     );
     if (!confirmed) return;
 
@@ -185,7 +174,7 @@ function ManageMaterials() {
                 Manage Classroom Materials
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                Upload lecture slides, edit text contents, and define module dependency chains.
+                Add lecture materials, edit text contents, and define module dependency chains.
               </p>
             </div>
 
@@ -194,7 +183,7 @@ function ManageMaterials() {
               className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
             >
               <FaPlus className="text-xs" />
-              <span>Upload New Material</span>
+              <span>Add New Material</span>
             </button>
           </div>
 
@@ -218,7 +207,7 @@ function ManageMaterials() {
           <div className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">
             {materials.length === 0 ? (
               <div className="p-8 text-center text-slate-400 text-sm">
-                No materials available. Click "Upload New Material" to add content.
+                No materials available. Click "Add New Material" to add content.
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -228,8 +217,7 @@ function ManageMaterials() {
                       <th className="py-4 px-6">Material Title</th>
                       <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
-                      <th className="py-4 px-6 text-center">Type</th>
-                      <th className="py-4 px-6 text-center">Prerequisites</th>
+                      <th className="py-4 px-6">Prerequisites</th>
                       <th className="py-4 px-6 text-center">Status</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
@@ -252,26 +240,23 @@ function ManageMaterials() {
                           {item.topic}
                         </td>
 
-                        {/* Type Badge */}
-                        <td className="py-4 px-6 text-center">
-                          <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider rounded text-slate-500 bg-slate-100/80 border border-slate-200/60 uppercase">
-                            {item.type}
-                          </span>
-                        </td>
-
-                        {/* Prerequisites: links to the material's stored file */}
-                        <td className="py-4 px-6 text-center">
-                          {item.fileHref ? (
-                            <a
-                              href={item.fileHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={item.fileName || item.fileHref}
-                              className="inline-flex items-center gap-1 max-w-[220px] px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                            >
-                              <FaLink className="text-[10px] shrink-0" />
-                              <span className="truncate">{item.fileName || 'Open file'}</span>
-                            </a>
+                        {/* Prerequisites: the study materials to cover first.
+                            Rendered as one chip per material rather than a
+                            count, so the lecturer can see the actual chain
+                            without opening the edit modal. */}
+                        <td className="py-4 px-6">
+                          {item.prerequisites?.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 max-w-[260px]">
+                              {item.prerequisites.map((prerequisite) => (
+                                <span
+                                  key={prerequisite.id}
+                                  title={prerequisite.title}
+                                  className="inline-block max-w-[240px] truncate px-2 py-0.5 rounded-full text-[11px] font-medium text-violet-700 bg-violet-50 border border-violet-100"
+                                >
+                                  {prerequisite.title}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-slate-300 font-medium">—</span>
                           )}
@@ -311,11 +296,16 @@ function ManageMaterials() {
         </main>
       </div>
 
-      {/* Integrated Upload Modal */}
+      {/* Integrated Upload Modal.
+          The already-fetched table rows double as the prerequisite options, so
+          neither modal needs a second request. They are withheld while the
+          fallback data is showing: those ids are invented, and offering them
+          would only produce a rejected save. */}
       <UploadMaterialModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onMaterialUploaded={handleMaterialUploaded}
+        materials={isFallback ? [] : materials}
       />
 
       {/* Integrated Edit Modal */}
@@ -323,6 +313,7 @@ function ManageMaterials() {
         material={editingMaterial}
         onClose={() => setEditingMaterial(null)}
         onMaterialUpdated={fetchMaterials}
+        materials={isFallback ? [] : materials}
       />
     </div>
   );
