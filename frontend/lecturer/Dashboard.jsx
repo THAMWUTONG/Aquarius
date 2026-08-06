@@ -11,10 +11,10 @@ import { getLecturerDashboardData } from '../services/getLecturerDashboardData.j
 // Presentation config only. The numbers come from the API; these describe how
 // each stat is LABELLED and COLOURED, keyed by the field name in stats.
 const statCardConfig = [
-  { key: 'totalStudents', label: 'Enrolled Students', iconClass: 'fas fa-users', color: 'text-blue-500', bgColor: 'bg-blue-50' },
-  { key: 'totalQuizzes', label: 'Total Quizzes', iconClass: 'fas fa-award', color: 'text-purple-500', bgColor: 'bg-purple-50' },
-  { key: 'totalMaterials', label: 'Materials Uploaded', iconClass: 'fas fa-folder-plus', color: 'text-emerald-500', bgColor: 'bg-emerald-50' },
-  { key: 'totalFeedback', label: 'Student Reviews', iconClass: 'fas fa-comment-alt', color: 'text-rose-500', bgColor: 'bg-rose-50' },
+  { key: 'totalStudents', label: 'Enrolled Students', iconClass: 'fas fa-users', color: 'text-blue-500', bgColor: 'bg-sky-100' },
+  { key: 'totalQuizzes', label: 'Total Quizzes', iconClass: 'fas fa-award', color: 'text-sky-500', bgColor: 'bg-sky-100' },
+  { key: 'totalMaterials', label: 'Materials Uploaded', iconClass: 'fas fa-folder-plus', color: 'text-sky-500', bgColor: 'bg-sky-100' },
+  { key: 'totalFeedback', label: 'Student Reviews', iconClass: 'fas fa-comment-alt', color: 'text-sky-500', bgColor: 'bg-sky-100' },
 ];
 
 // Static navigation, not data - safe to keep in the component.
