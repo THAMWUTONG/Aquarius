@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, updateMaterial } from '../services/lecturerContentService.jsx';
-import PrerequisitePicker from '../components/PrerequisitePicker.jsx';
 
 /**
- * Edits a material's title, description, topic and prerequisites.
+ * Edits a material's title, description and topic.
  *
  * The attached file is not replaceable here - swapping the file under an
  * existing row would silently change what students already downloaded. To
  * change the file, upload a new material and delete the old one.
  */
-function EditMaterialModal({ material, onClose, onMaterialUpdated, materials = [] }) {
+function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topicId, setTopicId] = useState('');
-  const [prerequisiteIds, setPrerequisiteIds] = useState([]);
 
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,9 +23,6 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated, materials = [
 
     setTitle(material.title ?? '');
     setDescription(material.description ?? '');
-    // The API sends prerequisites as [{id, title}]; the picker works in ids, so
-    // the existing selection is unwrapped here to pre-tick the right rows.
-    setPrerequisiteIds((material.prerequisites ?? []).map((prerequisite) => prerequisite.id));
     setError('');
 
     async function loadTopics() {
@@ -58,9 +53,6 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated, materials = [
         title,
         description,
         topic_id: parseInt(topicId, 10),
-        // Always sent, even when empty - that is how the server is told to
-        // clear a material's prerequisites rather than leave them alone.
-        prerequisite_ids: prerequisiteIds.join(','),
       });
 
       if (onMaterialUpdated) onMaterialUpdated();
@@ -149,21 +141,6 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated, materials = [
                 ))
               )}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Prerequisites <span className="text-slate-300 normal-case font-medium">(optional)</span>
-            </label>
-            <p className="text-[11px] text-slate-400 mb-2">
-              Study materials a student should complete before this one. Untick everything to remove them.
-            </p>
-            <PrerequisitePicker
-              materials={materials}
-              selectedIds={prerequisiteIds}
-              onChange={setPrerequisiteIds}
-              excludeId={material.id}
-            />
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">

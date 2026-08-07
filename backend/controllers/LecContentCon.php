@@ -75,9 +75,8 @@ function handleLecturerMaterialsRequest(): void
                 return;
 
             case 'POST':
-                // Still read from $_POST rather than the JSON body: the modals
-                // send multipart/form-data, which is also what lets the
-                // prerequisite list travel as a comma-joined field.
+                // Uploads arrive as multipart/form-data, so the fields are in
+                // $_POST and the file in $_FILES - not in the JSON body.
                 $materialId = (int) ($_POST['id'] ?? 0);
 
                 if ($materialId > 0) {
@@ -89,8 +88,8 @@ function handleLecturerMaterialsRequest(): void
                 }
 
                 sendLecContentResult(
-                    createLecturerMaterial($lecturerId, $_POST),
-                    'Material created.'
+                    createLecturerMaterial($lecturerId, $_POST, $_FILES['file'] ?? []),
+                    'Material uploaded.'
                 );
                 return;
 

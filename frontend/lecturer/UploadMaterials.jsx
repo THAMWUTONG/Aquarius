@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaExclamationCircle } from 'react-icons/fa';
+import { FaTimes, FaCloudUploadAlt, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, uploadMaterial } from '../services/lecturerContentService.jsx';
-import PrerequisitePicker from '../components/PrerequisitePicker.jsx';
 
-/**
- * Creates a study material: title, description, topic, type and the materials
- * that should be studied first.
- *
- * Materials carry no file attachment - they are metadata plus their place in
- * the dependency chain.
- */
-function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = [] }) {
+// Mirrors the server-side allow-list in LecContentLogic.php. Kept in sync so
+// the file picker filters up front instead of letting the upload round-trip
+// and fail; the server still re-checks, since this is only a convenience.
+const ACCEPTED_EXTENSIONS = {
+  pdf: '.pdf',
+  video: '.mp4,.mov,.avi,.mkv,.webm',
+  slides: '.ppt,.pptx,.odp',
+  document: '.doc,.docx,.odt,.txt,.rtf',
+};
+
+function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [fileType, setFileType] = useState('pdf');
   const [topicId, setTopicId] = useState('');
-  const [prerequisiteIds, setPrerequisiteIds] = useState([]);
+  const [file, setFile] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,11 +44,18 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
 
   if (!isOpen) return null;
 
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+      setError('');
+    }
+  };
+
   const resetForm = () => {
     setTitle('');
     setDescription('');
     setFileType('pdf');
-    setPrerequisiteIds([]);
+    setFile(null);
     setError('');
   };
 
@@ -54,22 +63,24 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
     e.preventDefault();
     setError('');
 
+    if (!file) {
+      setError('Please select a file to upload.');
+      return;
+    }
     if (!topicId) {
       setError('Please choose a topic for this material.');
       return;
     }
 
+    // FormData carries the file binary alongside the database metadata.
     // uploaded_by is NOT sent: the server takes it from the session, so the
-    // browser cannot claim to be creating material on another lecturer's behalf.
+    // browser cannot claim to be uploading on another lecturer's behalf.
     const formData = new FormData();
     formData.append('title', title);
     formData.append('description', description);
     formData.append('file_type', fileType);
     formData.append('topic_id', topicId);
-    // Comma-joined because multipart/form-data has no array type. The server
-    // splits it back out; an empty selection sends an empty string, which it
-    // reads as "no prerequisites".
-    formData.append('prerequisite_ids', prerequisiteIds.join(','));
+    formData.append('file', file);
 
     try {
       setLoading(true);
@@ -93,7 +104,7 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100">
           <h3 className="text-lg font-bold text-slate-800">
-            Add New Course Study Material
+            Upload New Course Study Material
           </h3>
           <button
             onClick={onClose}
@@ -143,7 +154,7 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
             />
           </div>
 
-          {/* Topic & Material Type Selection */}
+          {/* Topic & File Type Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
@@ -178,11 +189,16 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
 
             <div>
               <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                Material Type
+                File Type
               </label>
               <select
                 value={fileType}
-                onChange={(e) => setFileType(e.target.value)}
+                onChange={(e) => {
+                  setFileType(e.target.value);
+                  // The chosen file may no longer match the allow-list for the
+                  // new type, so clear it rather than submit a mismatch.
+                  setFile(null);
+                }}
                 className="w-full px-3 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 outline-none focus:border-sky-500 focus:bg-white transition-all cursor-pointer"
               >
                 <option value="slides">Slides</option>
@@ -193,19 +209,29 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
             </div>
           </div>
 
-          {/* Prerequisites: other study materials to be covered first */}
+          {/* Real File Input */}
           <div>
             <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Prerequisites <span className="text-slate-300 normal-case font-medium">(optional)</span>
+              File Attachment
             </label>
-            <p className="text-[11px] text-slate-400 mb-2">
-              Study materials a student should complete before this one. Pick as many as you need, or leave empty.
-            </p>
-            <PrerequisitePicker
-              materials={materials}
-              selectedIds={prerequisiteIds}
-              onChange={setPrerequisiteIds}
-            />
+            <div className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 bg-slate-50/30 hover:bg-slate-50 transition-colors text-center cursor-pointer">
+              <input
+                type="file"
+                required
+                accept={ACCEPTED_EXTENSIONS[fileType]}
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              />
+              <div className="flex flex-col items-center justify-center space-y-1">
+                <FaCloudUploadAlt className="text-2xl text-sky-500" />
+                <span className="text-xs font-semibold text-slate-600">
+                  {file ? file.name : 'Click or drag file to upload'}
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Accepted: {ACCEPTED_EXTENSIONS[fileType]} · max 50 MB
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -222,7 +248,7 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded, materials = 
               disabled={loading || topics.length === 0}
               className="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold shadow-sm transition-colors disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save Material'}
+              {loading ? 'Uploading...' : 'Save Material'}
             </button>
           </div>
         </form>

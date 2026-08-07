@@ -20,6 +20,7 @@ function getAllMaterialsForStudent(int $studentId): array
                 sm.id,
                 sm.title,
                 sm.description,
+                sm.file_path,
                 sm.file_type,
                 t.title AS topic_title,
                 c.id AS course_id,

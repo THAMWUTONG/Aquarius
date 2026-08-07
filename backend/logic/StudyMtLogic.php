@@ -40,6 +40,7 @@ function formatMaterials(array $rows): array
             'title' => $row['title'],
             'description' => $row['description'],
             'fileType' => $row['file_type'],
+            'filePath' => $row['file_path'],
             'isBookmarked' => (bool) $row['Bookmarked'],
         ];
     }, $rows);
