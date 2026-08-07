@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaLink, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import EditMaterialButton from '../components/EditMaterialButton.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import UploadMaterialModal from './UploadMaterials.jsx';
@@ -10,7 +10,10 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 import { deleteMaterial } from '../services/lecturerContentService.jsx';
 
-// Initial dataset matching database relationships (Materials -> Topics -> Courses)
+// Initial dataset matching database relationships
+// (Materials -> Topics -> Courses, and Materials -> prerequisite Materials).
+// `prerequisites` holds the materials a student should revise first, so the
+// entries point at other rows in this same list.
 const initialMaterials = [
   {
     id: 1,
@@ -20,6 +23,7 @@ const initialMaterials = [
     type: 'SLIDES',
     fileName: 'python_vars.pdf',
     fileHref: '/materials/cs101/python_vars.pdf',
+    prerequisites: [],
     regulationStatus: 'approved',
   },
   {
@@ -30,6 +34,7 @@ const initialMaterials = [
     type: 'VIDEO',
     fileName: 'control_flow.mp4',
     fileHref: '/materials/cs101/control_flow.mp4',
+    prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
     regulationStatus: 'approved',
   },
   {
@@ -40,6 +45,7 @@ const initialMaterials = [
     type: 'PDF',
     fileName: 'functions_ref.pdf',
     fileHref: '/materials/cs101/functions_ref.pdf',
+    prerequisites: [{ id: 2, title: 'Control Flow Video' }],
     regulationStatus: 'approved',
   },
   {
@@ -50,6 +56,7 @@ const initialMaterials = [
     type: 'DOCUMENT',
     fileName: 'linked_lists.docx',
     fileHref: '/materials/cs201/linked_lists.docx',
+    prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
     regulationStatus: 'approved',
   },
   {
@@ -60,6 +67,7 @@ const initialMaterials = [
     type: 'VIDEO',
     fileName: 'sorting_algo.mp4',
     fileHref: '/materials/cs201/sorting_algo.mp4',
+    prerequisites: [{ id: 4, title: 'Linked Lists Document' }],
     regulationStatus: 'pending',
   },
   {
@@ -70,6 +78,7 @@ const initialMaterials = [
     type: 'PDF',
     fileName: 'er_diagram.pdf',
     fileHref: '/materials/db301/er_diagram.pdf',
+    prerequisites: [],
     regulationStatus: 'approved',
   },
   {
@@ -80,6 +89,7 @@ const initialMaterials = [
     type: 'PDF',
     fileName: 'sql_exercises.pdf',
     fileHref: '/materials/db301/sql_exercises.pdf',
+    prerequisites: [{ id: 6, title: 'ER Diagram Tutorial' }],
     regulationStatus: 'approved',
   },
 ];
@@ -116,6 +126,9 @@ function ManageMaterials() {
           // '/materials/...' for the seeded rows. Normalising to exactly one
           // leading slash makes both usable as a root-relative href.
           fileHref: item.filePath ? `/${item.filePath.replace(/^\/+/, '')}` : null,
+          // [{ id, title }] of the materials to revise first. Defaulted to an
+          // empty array so the table can map over it without a null check.
+          prerequisites: item.prerequisites ?? [],
           regulationStatus: item.regulationStatus,
         }))
       );
@@ -259,20 +272,23 @@ function ManageMaterials() {
                           </span>
                         </td>
 
-                        {/* Prerequisites: links to the material's stored file */}
+                        {/* Prerequisites: the study materials to revise first */}
                         <td className="py-4 px-6 text-center">
-                          {item.fileHref ? (
-                            <a
-                              href={item.fileHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title={item.fileName || item.fileHref}
-                              className="inline-flex items-center gap-1 max-w-[220px] px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                            >
-                              <FaLink className="text-[10px] shrink-0" />
-                              <span className="truncate">{item.fileName || 'Open file'}</span>
-                            </a>
+                          {item.prerequisites.length > 0 ? (
+                            <div className="flex flex-wrap justify-center gap-1 max-w-[260px] mx-auto">
+                              {item.prerequisites.map((prerequisite) => (
+                                <span
+                                  key={prerequisite.id}
+                                  title={prerequisite.title}
+                                  className="inline-block max-w-[240px] truncate px-2.5 py-0.5 rounded-full text-xs font-medium text-indigo-600 bg-indigo-50 border border-indigo-100"
+                                >
+                                  {prerequisite.title}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
+                            // Optional, so an empty list is a normal state - not
+                            // missing data worth flagging.
                             <span className="text-slate-300 font-medium">—</span>
                           )}
                         </td>

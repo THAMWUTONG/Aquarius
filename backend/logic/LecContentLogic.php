@@ -45,7 +45,19 @@ function getLecturerMaterialsData(int $lecturerUserId): array
         $materials = [];
         error_log('[LecContentLogic] materials failed for lecturer ' . $lecturerUserId);
     } else {
-        $materials = formatLecturerMaterials($result['data']);
+        // Prerequisites failing is not worth blanking the whole table: the rows
+        // are still correct, they just come back with an empty prerequisite
+        // list, so the flag tells the caller that column is incomplete.
+        $prerequisiteResult = getLecturerMaterialPrerequisites($lecturerUserId);
+        if (!$prerequisiteResult['success']) {
+            $partialErrors[] = 'prerequisites';
+            error_log('[LecContentLogic] prerequisites failed for lecturer ' . $lecturerUserId);
+        }
+
+        $materials = formatLecturerMaterials(
+            $result['data'],
+            groupPrerequisitesByMaterial($prerequisiteResult['data'] ?? [])
+        );
     }
 
     return [
@@ -362,10 +374,155 @@ function lecAllowedUploadExtensions(): array
 }
 
 /**
+ * Reads the submitted prerequisite selection into a clean list of ids.
+ *
+ * The modals post multipart/form-data, where an array cannot be sent as-is, so
+ * the selection arrives as a JSON array string ('[3,7]'). A plain comma list
+ * and a real PHP array are accepted too, so the endpoint stays usable outside
+ * the modal. Blank input means "no prerequisites", which is allowed - they are
+ * optional.
+ *
+ * @param mixed $raw
+ * @return int[] unique, positive ids
+ */
+function normalisePrerequisiteIds($raw): array
+{
+    if (is_array($raw)) {
+        $values = $raw;
+    } else {
+        $text = trim((string) $raw);
+        if ($text === '') {
+            return [];
+        }
+
+        $decoded = json_decode($text, true);
+        $values = is_array($decoded) ? $decoded : explode(',', $text);
+    }
+
+    $ids = [];
+    foreach ($values as $value) {
+        $id = (int) $value;
+        if ($id > 0) {
+            $ids[] = $id;
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
+/**
+ * Checks a prerequisite selection before it is written.
+ *
+ * $materialId is 0 while creating: the row does not exist yet, so it cannot be
+ * its own prerequisite and nothing can point at it, which makes both the
+ * self-reference and the cycle check meaningless there.
+ *
+ * @param int   $lecturerUserId
+ * @param int   $materialId 0 when creating
+ * @param int[] $prerequisiteIds
+ * @return array{success: bool, status?: int, message?: string}
+ */
+function validatePrerequisiteIds(int $lecturerUserId, int $materialId, array $prerequisiteIds): array
+{
+    if (count($prerequisiteIds) === 0) {
+        return ['success' => true];
+    }
+
+    if ($materialId > 0 && in_array($materialId, $prerequisiteIds, true)) {
+        return [
+            'success' => false,
+            'status' => 400,
+            'message' => 'A material cannot be its own prerequisite.',
+        ];
+    }
+
+    // 403 rather than 404: the material probably exists, it just is not theirs
+    // to link to - the same rule every other write path here applies.
+    if (countOwnedMaterials($lecturerUserId, $prerequisiteIds) !== count($prerequisiteIds)) {
+        return [
+            'success' => false,
+            'status' => 403,
+            'message' => 'One of the selected prerequisites is not one of your materials.',
+        ];
+    }
+
+    if ($materialId > 0 && prerequisiteSelectionCreatesCycle($lecturerUserId, $materialId, $prerequisiteIds)) {
+        return [
+            'success' => false,
+            'status' => 400,
+            'message' => 'That prerequisite depends on this material, so the two would require each other.',
+        ];
+    }
+
+    return ['success' => true];
+}
+
+/**
+ * True when the chosen prerequisites would make the chain loop back.
+ *
+ * Prerequisites say "revise this first", so the links have to form a one-way
+ * chain: Chapter 1 before Chapter 2 before Chapter 3. If Chapter 1 already
+ * requires Chapter 3, making Chapter 3 require Chapter 1 leaves a student with
+ * no material they are allowed to start from. Self-references are blocked by
+ * the table's own CHECK, but a loop through a third material is not, so it is
+ * caught here by walking the existing chain upward from each new prerequisite
+ * and seeing whether it reaches the material being edited.
+ *
+ * A failed lookup returns false - the write is allowed rather than blocked by
+ * an error the lecturer cannot act on.
+ *
+ * @param int   $lecturerUserId
+ * @param int   $materialId
+ * @param int[] $prerequisiteIds
+ * @return bool
+ */
+function prerequisiteSelectionCreatesCycle(int $lecturerUserId, int $materialId, array $prerequisiteIds): bool
+{
+    $result = getLecturerMaterialPrerequisites($lecturerUserId);
+    if (!$result['success']) {
+        error_log('[LecContentLogic] cycle check skipped, prerequisites unreadable');
+        return false;
+    }
+
+    // material_id => [prerequisite ids]. The edited material's own existing
+    // links are left out: they are about to be replaced by this selection.
+    $chain = [];
+    foreach ($result['data'] as $row) {
+        $owner = (int) $row['material_id'];
+        if ($owner === $materialId) {
+            continue;
+        }
+        $chain[$owner][] = (int) $row['prerequisite_id'];
+    }
+
+    $queue = $prerequisiteIds;
+    $seen = [];
+
+    while (count($queue) > 0) {
+        $current = array_shift($queue);
+
+        if ($current === $materialId) {
+            return true;
+        }
+        if (isset($seen[$current])) {
+            continue;
+        }
+        $seen[$current] = true;
+
+        foreach ($chain[$current] ?? [] as $next) {
+            $queue[] = $next;
+        }
+    }
+
+    return false;
+}
+
+/**
  * Validates an uploaded material and stores it.
  *
  * @param int   $lecturerUserId
- * @param array $payload $_POST fields: title, description, file_type, topic_id
+ * @param array $payload $_POST fields: title, description, file_type, topic_id,
+ *                       prerequisite_ids (optional)
  * @param array $file    the $_FILES['file'] entry, or [] when nothing was sent
  * @return array{success: bool, status: int, message?: string, materialId?: int}
  */
@@ -391,6 +548,14 @@ function createLecturerMaterial(int $lecturerUserId, array $payload, array $file
         return ['success' => false, 'status' => 403, 'message' => 'That topic does not belong to your courses.'];
     }
 
+    // Checked BEFORE the file is stored: a rejected selection should not leave
+    // an uploaded file behind that no row will ever reference.
+    $prerequisiteIds = normalisePrerequisiteIds($payload['prerequisite_ids'] ?? '');
+    $prerequisiteCheck = validatePrerequisiteIds($lecturerUserId, 0, $prerequisiteIds);
+    if (!$prerequisiteCheck['success']) {
+        return $prerequisiteCheck;
+    }
+
     $stored = lecStoreUploadedFile($file, $allowed[$fileType]);
     if (isset($stored['error'])) {
         return ['success' => false, 'status' => $stored['status'], 'message' => $stored['error']];
@@ -410,6 +575,19 @@ function createLecturerMaterial(int $lecturerUserId, array $payload, array $file
         // rather than leaving the uploads directory to grow with orphans.
         @unlink($stored['absolutePath']);
         return ['success' => false, 'status' => 500, 'message' => "We couldn't save the material. Please try again later."];
+    }
+
+    // The material itself is saved, so a failure here is reported without
+    // undoing the upload - the lecturer can add the prerequisites from Edit.
+    if (count($prerequisiteIds) > 0) {
+        $linked = setMaterialPrerequisites($result['materialId'], $prerequisiteIds);
+        if (!$linked['success']) {
+            return [
+                'success' => false,
+                'status' => 500,
+                'message' => 'The material was saved, but its prerequisites could not be linked. Please set them from Edit.',
+            ];
+        }
     }
 
     return ['success' => true, 'status' => 201, 'materialId' => $result['materialId']];
@@ -553,6 +731,21 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
         return ['success' => false, 'status' => 403, 'message' => 'That topic does not belong to your courses.'];
     }
 
+    // Only rewritten when the caller actually sent the field. An update that
+    // omits it - any older client, or a partial edit - should leave the
+    // existing prerequisites alone rather than silently clear them.
+    $editsPrerequisites = array_key_exists('prerequisite_ids', $payload);
+    $prerequisiteIds = $editsPrerequisites
+        ? normalisePrerequisiteIds($payload['prerequisite_ids'])
+        : [];
+
+    if ($editsPrerequisites) {
+        $prerequisiteCheck = validatePrerequisiteIds($lecturerUserId, $materialId, $prerequisiteIds);
+        if (!$prerequisiteCheck['success']) {
+            return $prerequisiteCheck;
+        }
+    }
+
     $result = updateMaterialById($materialId, [
         'title' => $title,
         'description' => trim((string) ($payload['description'] ?? '')),
@@ -561,6 +754,13 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
 
     if (!$result['success']) {
         return ['success' => false, 'status' => 500, 'message' => "We couldn't update the material. Please try again later."];
+    }
+
+    if ($editsPrerequisites) {
+        $linked = setMaterialPrerequisites($materialId, $prerequisiteIds);
+        if (!$linked['success']) {
+            return ['success' => false, 'status' => 500, 'message' => "We couldn't update the prerequisites. Please try again later."];
+        }
     }
 
     return ['success' => true, 'status' => 200];
@@ -591,21 +791,47 @@ function formatLecturerQuizzes(array $rows): array
 }
 
 /**
+ * Turns the flat prerequisite pair rows into material_id => [{id, title}, ...].
+ *
+ * @param array $rows from getLecturerMaterialPrerequisites()
+ * @return array<int, array<int, array{id: int, title: string}>>
+ */
+function groupPrerequisitesByMaterial(array $rows): array
+{
+    $grouped = [];
+
+    foreach ($rows as $row) {
+        $grouped[(int) $row['material_id']][] = [
+            'id' => (int) $row['prerequisite_id'],
+            'title' => $row['prerequisite_title'],
+        ];
+    }
+
+    return $grouped;
+}
+
+/**
  * file_type is stored lowercase ('pdf', 'slides', 'video', 'document') but the
  * table renders a badge in capitals. Uppercasing is presentation, so the raw
  * value is passed through as 'fileType' and the badge text is built in JSX.
  *
- * prerequisites is returned as a NUMBER, not the string '1 topics' the mock
- * data used - the frontend decides how to word it.
+ * prerequisites is an ARRAY of the study materials a student should revise
+ * first, each with its id and title - not a count. The frontend shows the
+ * titles, and the edit modal needs the ids to pre-tick the current selection.
+ * Materials with no prerequisites get an empty array, which is a valid state:
+ * prerequisites are optional.
  *
  * @param array $rows
+ * @param array $prerequisitesByMaterial material_id => [{id, title}, ...]
  * @return array
  */
-function formatLecturerMaterials(array $rows): array
+function formatLecturerMaterials(array $rows, array $prerequisitesByMaterial = []): array
 {
-    return array_map(function (array $row) {
+    return array_map(function (array $row) use ($prerequisitesByMaterial) {
+        $id = (int) $row['id'];
+
         return [
-            'id' => (int) $row['id'],
+            'id' => $id,
             'title' => $row['title'],
             'description' => $row['description'],
             'course' => $row['course'],
@@ -613,7 +839,7 @@ function formatLecturerMaterials(array $rows): array
             'fileType' => $row['file_type'],
             'fileName' => $row['file_name'],
             'filePath' => $row['file_path'],
-            'prerequisites' => (int) $row['prerequisites'],
+            'prerequisites' => $prerequisitesByMaterial[$id] ?? [],
             'regulationStatus' => $row['regulation_status'],
             'uploadedAt' => !empty($row['uploaded_at'])
                 ? substr($row['uploaded_at'], 0, 10)

@@ -204,10 +204,7 @@ function getLecturerMaterials(int $lecturerUserId): array
                 sm.file_name,
                 sm.file_path,
                 sm.regulation_status,
-                sm.uploaded_at,
-                (SELECT COUNT(*)
-                   FROM study_material_prerequisites p
-                  WHERE p.material_id = sm.id) AS prerequisites
+                sm.uploaded_at
             FROM lecturers l
             JOIN courses c ON c.lecturer_id = l.lecturer_id
             JOIN topics t  ON t.course_id = c.id
@@ -223,6 +220,146 @@ function getLecturerMaterials(int $lecturerUserId): array
         return ['success' => true, 'data' => $stmt->fetchAll()];
     } catch (PDOException $e) {
         error_log('[LecContentRepository] getLecturerMaterials failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Every prerequisite link under this lecturer's courses, one row per pair.
+ *
+ * A prerequisite is itself a study material - the one a student should revise
+ * before the current one (Chapter 1 is the prerequisite of Chapter 2) - so the
+ * prerequisite's own title is joined in and the caller groups the rows by
+ * material_id. This is fetched as ONE query for the whole table rather than a
+ * per-row subquery, which would be a query per material rendered.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, data?: array, error?: string}
+ */
+function getLecturerMaterialPrerequisites(int $lecturerUserId): array
+{
+    $pdo = getDbConnection();
+
+    $sql = "SELECT
+                p.material_id,
+                pre.id    AS prerequisite_id,
+                pre.title AS prerequisite_title
+            FROM lecturers l
+            JOIN courses c ON c.lecturer_id = l.lecturer_id
+            JOIN topics t  ON t.course_id = c.id
+            JOIN study_materials sm ON sm.topic_id = t.id
+            JOIN study_material_prerequisites p ON p.material_id = sm.id
+            JOIN study_materials pre ON pre.id = p.prerequisite_id
+            WHERE l.id = :lecturerId
+            ORDER BY p.material_id ASC, pre.title ASC";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true, 'data' => $stmt->fetchAll()];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] getLecturerMaterialPrerequisites failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * How many of the given material ids the lecturer actually owns.
+ *
+ * Used to reject a prerequisite list containing someone else's material: the
+ * foreign key only checks the row exists, never who it belongs to.
+ *
+ * @param int   $lecturerUserId
+ * @param int[] $materialIds non-empty, already cast to int
+ * @return int
+ */
+function countOwnedMaterials(int $lecturerUserId, array $materialIds): int
+{
+    if (count($materialIds) === 0) {
+        return 0;
+    }
+
+    $pdo = getDbConnection();
+
+    // Reindexed first: a caller's array may have gaps (array_filter leaves
+    // them), and the placeholder names must line up with the bind loop below.
+    $materialIds = array_values($materialIds);
+
+    // Named placeholders per id: the list length varies, so the statement
+    // cannot be a fixed string, but the values still never touch the SQL.
+    $placeholders = [];
+    foreach (array_keys($materialIds) as $index) {
+        $placeholders[] = ':id' . $index;
+    }
+
+    $sql = "SELECT COUNT(*)
+            FROM lecturers l
+            JOIN courses c ON c.lecturer_id = l.lecturer_id
+            JOIN topics t  ON t.course_id = c.id
+            JOIN study_materials sm ON sm.topic_id = t.id
+            WHERE l.id = :lecturerId AND sm.id IN (" . implode(', ', $placeholders) . ")";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+    foreach (array_values($materialIds) as $index => $materialId) {
+        $stmt->bindValue(':id' . $index, $materialId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    return (int) $stmt->fetchColumn();
+}
+
+/**
+ * Replaces the whole prerequisite list of one material.
+ *
+ * Delete-then-insert inside a transaction, because a half-applied edit would
+ * leave the material pointing at a mix of its old and new prerequisites - worse
+ * than either list on its own. An empty list simply clears them, which is what
+ * "prerequisites are optional" means once one has been set.
+ *
+ * Ownership of both the material and every prerequisite must already have been
+ * checked by the caller.
+ *
+ * @param int   $materialId
+ * @param int[] $prerequisiteIds
+ * @return array{success: bool, error?: string}
+ */
+function setMaterialPrerequisites(int $materialId, array $prerequisiteIds): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $pdo->beginTransaction();
+
+        $deleteStmt = $pdo->prepare(
+            "DELETE FROM study_material_prerequisites WHERE material_id = :materialId"
+        );
+        $deleteStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+        $deleteStmt->execute();
+
+        if (count($prerequisiteIds) > 0) {
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO study_material_prerequisites (material_id, prerequisite_id)
+                 VALUES (:materialId, :prerequisiteId)"
+            );
+
+            foreach ($prerequisiteIds as $prerequisiteId) {
+                $insertStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+                $insertStmt->bindValue(':prerequisiteId', $prerequisiteId, PDO::PARAM_INT);
+                $insertStmt->execute();
+            }
+        }
+
+        $pdo->commit();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('[LecContentRepository] setMaterialPrerequisites failed: ' . $e->getMessage());
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
     }
 }

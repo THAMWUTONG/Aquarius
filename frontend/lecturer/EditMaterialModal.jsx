@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, updateMaterial } from '../services/lecturerContentService.jsx';
+import PrerequisitePicker from '../components/PrerequisitePicker.jsx';
 
 /**
- * Edits a material's title, description and topic.
+ * Edits a material's title, description, topic and prerequisites.
  *
  * The attached file is not replaceable here - swapping the file under an
  * existing row would silently change what students already downloaded. To
@@ -13,6 +14,7 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topicId, setTopicId] = useState('');
+  const [prerequisiteIds, setPrerequisiteIds] = useState([]);
 
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +25,9 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
 
     setTitle(material.title ?? '');
     setDescription(material.description ?? '');
+    // The table row already carries the current prerequisites as {id, title},
+    // so the picker can be pre-ticked without a second round trip.
+    setPrerequisiteIds((material.prerequisites ?? []).map((item) => item.id));
     setError('');
 
     async function loadTopics() {
@@ -53,6 +58,10 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
         title,
         description,
         topic_id: parseInt(topicId, 10),
+        // Always sent, including as '[]': omitting the field tells the server
+        // to leave the existing prerequisites alone, which would make it
+        // impossible to clear the last one.
+        prerequisite_ids: JSON.stringify(prerequisiteIds),
       });
 
       if (onMaterialUpdated) onMaterialUpdated();
@@ -142,6 +151,13 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
               )}
             </select>
           </div>
+
+          <PrerequisitePicker
+            key={material.id}
+            selectedIds={prerequisiteIds}
+            onChange={setPrerequisiteIds}
+            excludeId={material.id}
+          />
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
