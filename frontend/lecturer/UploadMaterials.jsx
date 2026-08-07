@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FaTimes, FaCloudUploadAlt, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, uploadMaterial } from '../services/lecturerContentService.jsx';
+import PrerequisitePicker from '../components/PrerequisitePicker.jsx';
 
 // Mirrors the server-side allow-list in LecContentLogic.php. Kept in sync so
 // the file picker filters up front instead of letting the upload round-trip
@@ -17,6 +18,9 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
   const [description, setDescription] = useState('');
   const [fileType, setFileType] = useState('pdf');
   const [topicId, setTopicId] = useState('');
+  // Ids of the materials to revise before this one. Optional - an empty list
+  // is a perfectly valid material.
+  const [prerequisiteIds, setPrerequisiteIds] = useState([]);
   const [file, setFile] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +59,7 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
     setTitle('');
     setDescription('');
     setFileType('pdf');
+    setPrerequisiteIds([]);
     setFile(null);
     setError('');
   };
@@ -80,6 +85,9 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
     formData.append('description', description);
     formData.append('file_type', fileType);
     formData.append('topic_id', topicId);
+    // FormData cannot carry an array, so the selection goes over as JSON and
+    // the server decodes it. '[]' means "no prerequisites", which is allowed.
+    formData.append('prerequisite_ids', JSON.stringify(prerequisiteIds));
     formData.append('file', file);
 
     try {
@@ -208,6 +216,12 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
               </select>
             </div>
           </div>
+
+          {/* Prerequisites (optional) */}
+          <PrerequisitePicker
+            selectedIds={prerequisiteIds}
+            onChange={setPrerequisiteIds}
+          />
 
           {/* Real File Input */}
           <div>
