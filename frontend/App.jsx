@@ -1,4 +1,5 @@
 import { Routes, Route } from "react-router"
+import { useLocation } from "react-router"
 import Login from "./pages/Login.jsx"
 import StudentDashboard from "./student/StudentDashboard.jsx"
 import StudyMaterials from "./student/StudyMaterials.jsx"
@@ -23,6 +24,8 @@ import Landing from "./pages/Landing.jsx"
 
 
 function App() {
+  const location = useLocation();
+
   return (
     <>
       <Routes>
@@ -47,7 +50,7 @@ function App() {
         <Route path="/audit-log" element={<AuditLog />} />
         <Route path="/admin-profile" element={<AdminProfile />} />
       </Routes>
-      <ChatbotBubble />
+      {!location.pathname.includes("/take-quizzes") && <ChatbotBubble />}
     </>
   )
 }
