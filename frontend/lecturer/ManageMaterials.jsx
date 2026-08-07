@@ -182,7 +182,7 @@ function ManageMaterials() {
   };
 
   return (
-    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
+    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] antialiased">
       {/* Sidebar Navigation */}
       <Sidebar />
 
