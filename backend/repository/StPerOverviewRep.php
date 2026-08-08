@@ -61,7 +61,7 @@ function getCourseProgress(int $studentId): array
  * @param int $limit
  * @return array{success: bool, data?: array, error?: string}
  */
-function getScoreHistory(int $studentId, int $limit = 8): array
+function getScoreHistory(int $studentId): array
 {
     $pdo = getDbConnection();
 
@@ -80,13 +80,11 @@ function getScoreHistory(int $studentId, int $limit = 8): array
             ) qmax ON qmax.quiz_id = q.id
             WHERE qa.student_id = :studentId
               AND qmax.max_score > 0
-            ORDER BY qa.completed_at DESC
-            LIMIT :limit";
+            ORDER BY qa.completed_at DESC";
 
     try {
         $stmt = $pdo->prepare($sql);
         $stmt->bindValue(':studentId', $studentId, PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
         return ['success' => true, 'data' => $stmt->fetchAll()];

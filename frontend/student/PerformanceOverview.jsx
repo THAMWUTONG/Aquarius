@@ -75,20 +75,22 @@ function PerformanceOverview(){
                   <h2 className="text-lg font-bold">Score History</h2>
                 </div>
                 <hr className="text-gray-300"></hr>
-                <table className="w-full text-center">
-                  <thead>
-                    <tr>
-                      <th className="pb-1.5 text-sm font-bold">QUIZ TITLE</th>
-                      <th className="pb-1.5 text-sm font-bold">ATTEMPTED AT</th>
-                      <th className="pb-1.5 text-sm font-bold">SCORE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {scoreHistory.map((entry) => (
-                      <ScoreHistoryEntry key={entry.attemptId} quizName={entry.quizTitle} attemptedAt={entry.attemptedAt} score={entry.score} />
-                    ))}
-                  </tbody>
-                </table>
+                <div className="max-h-72 overflow-y-auto">
+                  <table className="w-full text-center">
+                    <thead>
+                      <tr>
+                        <th className="pb-1.5 text-sm font-bold">QUIZ TITLE</th>
+                        <th className="pb-1.5 text-sm font-bold">ATTEMPTED AT</th>
+                        <th className="pb-1.5 text-sm font-bold">SCORE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scoreHistory.map((entry) => (
+                        <ScoreHistoryEntry key={entry.attemptId} quizName={entry.quizTitle} attemptedAt={entry.attemptedAt} score={entry.score} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4 sm:col-span-2">

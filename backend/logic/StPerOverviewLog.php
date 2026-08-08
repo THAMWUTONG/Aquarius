@@ -32,8 +32,8 @@ function getPerformanceOverviewData(int $studentId): array
         $courseProgress = formatCourseProgress($progressResult['data']);
     }
 
-    // Score History (last 8 attempts)
-    $historyResult = getScoreHistory($studentId, 8);
+    // Score History
+    $historyResult = getScoreHistory($studentId);
     if (!$historyResult['success']) {
         $partialErrors[] = 'scoreHistory';
         $scoreHistory = [];
