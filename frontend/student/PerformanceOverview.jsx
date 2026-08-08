@@ -55,7 +55,7 @@ function PerformanceOverview(){
           )}
 
           {!loading && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4">
                 <div className="flex items-center gap-2">
                   <FaChartBar className="text-sky-500"/>
@@ -91,7 +91,7 @@ function PerformanceOverview(){
                 </table>
               </div>
 
-              <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4 col-span-2">
+              <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4 sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <FaChartLine className="text-sky-500"/>
                   <h2 className="text-lg font-bold">Improvement Trends</h2>

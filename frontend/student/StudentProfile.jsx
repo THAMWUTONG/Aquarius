@@ -68,7 +68,7 @@ function StudentProfile(){
         <Sidebar />
         <main className="flex-1 min-w-0 flex flex-col">
           <HeaderBar displayedTitle="Profile" userName={ user.name } userRole={ user.role }/>
-          <div className="flex-1 grid grid-cols-2 gap-6 p-8 overflow-y-auto">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6 p-8 overflow-y-auto">
             {loading && <p className="rounded-xl bg-white p-6 shadow-sm text-gray-600">Loading Profile Data...</p>}
 
             {!loading && (

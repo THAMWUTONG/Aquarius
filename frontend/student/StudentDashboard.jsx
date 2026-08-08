@@ -48,7 +48,7 @@ function StudentDashboard(){
         <main className="flex-1 min-w-0 flex flex-col">
           <HeaderBar displayedTitle="Student Dashboard" userName={ user.name } userRole={ user.role } />
           <div className="flex-1 p-8 overflow-y-auto space-y-6">
-            <div className="flex justify-between items-center p-6 rounded-xl shadow-md bg-linear-to-r from-sky-400 to-sky-600">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-6 rounded-xl shadow-md bg-linear-to-r from-sky-400 to-sky-600">
               <div>
                 <h2 className="text-2xl font-bold text-white">Good morning, { user.name }!</h2>
                 <p className="text-white">Here's to another day of hardwork and dedication!</p>
@@ -66,13 +66,13 @@ function StudentDashboard(){
 
             {!loading && (
               <>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <DashboardStatisticCard icon={ <FaBookOpen /> } displayedTitle={ "Enrolled Courses" } displayedData={ studentDashboardData.enrolledCourses.length } />
                   <DashboardStatisticCard icon={ <FaGraduationCap /> } displayedTitle={ "Quizzes Completed" } displayedData={ studentDashboardData.totalQuizzesAttempted } />
                   <DashboardStatisticCard icon={ <FaCalendar /> } displayedTitle={ "Next Event" } displayedData={ studentDashboardData.upcomingEvents.length === 0 ? "None" : studentDashboardData.upcomingEvents[0].title } />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2 p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2 p-6 rounded-xl border border-gray-300 shadow-md space-y-4 text-lg bg-white">
                     <div className="flex items-center gap-2">
                       <FaExclamationTriangle className="text-sky-500" />
                       <h2 className="text-lg font-bold">Focus Areas</h2>

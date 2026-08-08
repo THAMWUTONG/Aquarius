@@ -71,7 +71,7 @@ function StudentStudyCalendar({ importantEvents = [], studySchedule = [] }) {
         <h2 className="text-lg font-bold">{monthNames[month]}</h2>
       </div>
       <hr className="text-gray-300"></hr>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-[repeat(7,minmax(100px,1fr))] sm:grid-cols-7 w-fit gap-2">
         <p className="text-center font-bold">SUN</p>
         <p className="text-center font-bold">MON</p>
         <p className="text-center font-bold">TUE</p>

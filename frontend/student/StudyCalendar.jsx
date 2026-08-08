@@ -121,7 +121,7 @@ function StudyCalendar(){
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsMarkEventOpen(true)}>&#43; Mark Important Events</button>
                   <button className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-sky-500 hover:bg-sky-600" onClick={() => setIsGenerateScheduleOpen(true)}>Generate Study Schedule</button>
                 </div>
-                <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+                <div className="p-6 border border-gray-300 rounded-xl shadow-md bg-white space-y-4 overflow-x-auto">
                   <StudentStudyCalendar importantEvents={calendarData.importantEvents} studySchedule={calendarData.studySchedule} />
                 </div>
               </>
@@ -131,7 +131,7 @@ function StudyCalendar(){
 
         {isMarkEventOpen && (
           <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-            <div className="w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+            <div className="w-sm sm:w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold">Add New Event</h2>
                 <button onClick={() => setIsMarkEventOpen(false)}><FaTimes /></button>
@@ -164,7 +164,7 @@ function StudyCalendar(){
         )}
         {isGenerateScheduleOpen && (
           <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-            <div className="w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
+            <div className="w-sm sm:w-md p-4 border border-gray-300 rounded-xl shadow-md bg-white space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold">Generate Study Schedule</h2>
                 <button onClick={() => setIsGenerateScheduleOpen(false)}><FaTimes /></button>

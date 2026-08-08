@@ -50,9 +50,9 @@ function Sidebar() {
 
   return (
     // min-h-screen and shrink-0 force the sidebar to stay locked on the left
-    <aside className="w-64 min-h-screen bg-white border-r border-gray-200 flex flex-col shrink-0">
+    <aside className="fixed inset-0 sm:relative hidden sm:flex sm:flex-col sm:shrink-0 w-64 min-h-screen bg-white border-r border-gray-200" id="sidebar">
       {/* Logo Section */}
-      <div className="flex items-center gap-3 p-6">
+      <div className="flex items-center gap-3 mt-16 sm:mt-0 p-6">
         <img className="w-14 h-14" src={logo} alt="Aquarius Logo"/>
         <div>
           <h1 className="text-xl font-bold leading-none text-slate-800">Aquarius</h1>

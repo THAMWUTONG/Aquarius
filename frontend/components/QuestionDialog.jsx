@@ -69,7 +69,7 @@ function QuestionDialog({ quizId, quizTitle, quizTopic, durationInMinutes, quest
 
   return (
     <div className="fixed inset-0 flex justify-center items-center bg-black/50">
-      <div className="max-w-2xl mx-auto rounded-xl shadow bg-white">
+      <div className="max-w-sm sm:max-w-2xl mx-auto rounded-xl shadow bg-white">
         {quizSubmitted && (
           <>
             <div className="flex justify-between items-center p-4 rounded-t-xl text-white bg-sky-500">

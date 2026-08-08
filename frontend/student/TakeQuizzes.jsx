@@ -76,7 +76,7 @@ function TakeQuizzes(){
           )}
 
           {!loading && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {quizData.length > 0 ? (
                 quizData.map((quiz) => (
                   <QuizCard key={quiz.id} id={quiz.id} courseName={quiz.courseName} title={quiz.title} topicName={quiz.topicName} bestScore={quiz.bestScore ?? 0} numberOfQuestions={quiz.numberOfQuestions} durationInMinutes={quiz.durationInMinutes} onStartQuiz={() => handleStartQuiz(quiz)} />

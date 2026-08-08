@@ -58,7 +58,7 @@ function StudyMaterials(){
       <main className="flex-1 min-w-0 flex flex-col">
         <HeaderBar displayedTitle="Study Materials" userName={ user.name } userRole={ user.role } />
         <div className="flex-1 p-8 overflow-y-auto space-y-6">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <input className="col-span-2 p-2 border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500 rounded-xl bg-white" type="text" placeholder="Search by title or topic..." value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)}
             />
             <select className="w-full p-2 border border-gray-300 focus:outline-none focus:border-2 focus:border-sky-500 rounded-xl bg-white" value={selectedCourseId} onChange={(event) => setSelectedCourseId(event.target.value)}>
@@ -78,7 +78,7 @@ function StudyMaterials(){
             <div className="rounded-xl bg-white p-6 shadow-sm text-gray-600">No study materials available.</div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredMaterials.map((material) => (
               <StudyMaterialCard key={material.id} id={material.id} courseName={material.courseTitle} title={material.title} topicName={material.topicTitle} description={material.description} type={material.fileType} prerequisites={material.prerequisites} downloadPath={material.filePath} initialIsBookmarked={material.isBookmarked} />
             ))}
