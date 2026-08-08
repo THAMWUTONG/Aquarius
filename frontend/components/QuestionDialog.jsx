@@ -40,7 +40,7 @@ function QuestionDialog({ quizId, quizTitle, quizTopic, durationInMinutes, quest
     return () => {
       clearInterval(timer)
     }
-  }, [])
+  }, [quizSubmitted])
 
   async function handleSubmit(e) {
     e.preventDefault()
