@@ -6,6 +6,7 @@
  *
  *   1. getLecturerQuizzes()   -> quizzes under the lecturer's course topics
  *   2. getLecturerMaterials() -> study materials under the same topics
+ *   3. getLecturerTags()      -> study tags the lecturer created themselves
  *
  * Ownership is always resolved the same way:
  *   lecturers.id (int, from session)
@@ -13,6 +14,10 @@
  *       -> courses.lecturer_id
  *         -> topics.course_id
  *           -> quizzes.topic_id / study_materials.topic_id
+ *
+ * Study tags are the one exception: tags.created_by points straight at
+ * lecturers.id, so a tag is owned by the lecturer who typed it - never by
+ * whoever owns the material it is stuck on.
  */
 
 require_once __DIR__ . '/../config/db.php';
@@ -360,6 +365,316 @@ function setMaterialPrerequisites(int $materialId, array $prerequisiteIds): arra
             $pdo->rollBack();
         }
         error_log('[LecContentRepository] setMaterialPrerequisites failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Every study tag this lecturer created, with how many materials use it.
+ *
+ * The count is a scalar subquery rather than a JOIN + GROUP BY so a tag that is
+ * not on any material yet still comes back, with a count of 0 - a brand new tag
+ * must be visible in the manage list before it has been used anywhere.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, data?: array, error?: string}
+ */
+function getLecturerTags(int $lecturerUserId): array
+{
+    $pdo = getDbConnection();
+
+    $sql = "SELECT
+                tg.id,
+                tg.name,
+                (SELECT COUNT(*) FROM study_material_tags smt WHERE smt.tag_id = tg.id) AS material_count
+            FROM tags tg
+            WHERE tg.created_by = :lecturerId
+            ORDER BY tg.name ASC";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true, 'data' => $stmt->fetchAll()];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] getLecturerTags failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Every tag link on this lecturer's materials, one row per pair.
+ *
+ * Deliberately restricted to tags the lecturer CREATED (tg.created_by = l.id):
+ * a colleague may have tagged one of these materials, and showing a tag the
+ * lecturer cannot edit or remove would be a control they have no way to use.
+ * Fetched as ONE query for the whole table, like the prerequisites are.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, data?: array, error?: string}
+ */
+function getLecturerMaterialTags(int $lecturerUserId): array
+{
+    $pdo = getDbConnection();
+
+    $sql = "SELECT
+                smt.material_id,
+                tg.id   AS tag_id,
+                tg.name AS tag_name
+            FROM lecturers l
+            JOIN courses c ON c.lecturer_id = l.lecturer_id
+            JOIN topics t  ON t.course_id = c.id
+            JOIN study_materials sm ON sm.topic_id = t.id
+            JOIN study_material_tags smt ON smt.material_id = sm.id
+            JOIN tags tg ON tg.id = smt.tag_id AND tg.created_by = l.id
+            WHERE l.id = :lecturerId
+            ORDER BY smt.material_id ASC, tg.name ASC";
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true, 'data' => $stmt->fetchAll()];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] getLecturerMaterialTags failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * True when this tag was created by this lecturer.
+ *
+ * @param int $lecturerUserId
+ * @param int $tagId
+ * @return bool
+ */
+function lecturerOwnsTag(int $lecturerUserId, int $tagId): bool
+{
+    $pdo = getDbConnection();
+
+    $stmt = $pdo->prepare(
+        "SELECT 1 FROM tags WHERE id = :tagId AND created_by = :lecturerId LIMIT 1"
+    );
+    $stmt->bindValue(':tagId', $tagId, PDO::PARAM_INT);
+    $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    return $stmt->fetchColumn() !== false;
+}
+
+/**
+ * How many of the given tag ids this lecturer actually created.
+ *
+ * Same reasoning as countOwnedMaterials(): the foreign key only proves the tag
+ * row exists, so without this a lecturer could post a colleague's tag id and
+ * stick someone else's tag onto their material.
+ *
+ * @param int   $lecturerUserId
+ * @param int[] $tagIds already cast to int
+ * @return int
+ */
+function countOwnedTags(int $lecturerUserId, array $tagIds): int
+{
+    if (count($tagIds) === 0) {
+        return 0;
+    }
+
+    $pdo = getDbConnection();
+
+    $tagIds = array_values($tagIds);
+
+    $placeholders = [];
+    foreach (array_keys($tagIds) as $index) {
+        $placeholders[] = ':id' . $index;
+    }
+
+    $sql = "SELECT COUNT(*)
+            FROM tags
+            WHERE created_by = :lecturerId AND id IN (" . implode(', ', $placeholders) . ")";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+    foreach ($tagIds as $index => $tagId) {
+        $stmt->bindValue(':id' . $index, $tagId, PDO::PARAM_INT);
+    }
+    $stmt->execute();
+
+    return (int) $stmt->fetchColumn();
+}
+
+/**
+ * Who created the tag with this exact name, if anyone.
+ *
+ * tags.name carries a UNIQUE index across the WHOLE platform, so a lecturer can
+ * collide with a colleague's tag they are not even allowed to see. This lets the
+ * logic layer say which of the two happened instead of reporting a bare
+ * constraint violation the lecturer cannot act on.
+ *
+ * @param string $name
+ * @param int    $excludeTagId ignore this row - the tag being renamed to itself
+ * @return int|null lecturers.id, or null when the name is free
+ */
+function getTagOwnerByName(string $name, int $excludeTagId = 0): ?int
+{
+    $pdo = getDbConnection();
+
+    $stmt = $pdo->prepare(
+        "SELECT created_by FROM tags WHERE name = :name AND id <> :excludeId LIMIT 1"
+    );
+    $stmt->bindValue(':name', $name, PDO::PARAM_STR);
+    $stmt->bindValue(':excludeId', $excludeTagId, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $owner = $stmt->fetchColumn();
+
+    return $owner === false ? null : (int) $owner;
+}
+
+/**
+ * Inserts one study tag owned by this lecturer.
+ *
+ * @param int    $lecturerUserId becomes tags.created_by
+ * @param string $name
+ * @return array{success: bool, tagId?: int, error?: string}
+ */
+function createTag(int $lecturerUserId, string $name): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare(
+            "INSERT INTO tags (name, created_by) VALUES (:name, :createdBy)"
+        );
+        $stmt->bindValue(':name', $name, PDO::PARAM_STR);
+        $stmt->bindValue(':createdBy', $lecturerUserId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true, 'tagId' => (int) $pdo->lastInsertId()];
+    } catch (PDOException $e) {
+        // 23000 is the integrity-violation class - here it can only be the
+        // UNIQUE name index, which the caller reports as a name clash rather
+        // than a server error.
+        if ($e->getCode() === '23000') {
+            return ['success' => false, 'error' => 'DUPLICATE_NAME'];
+        }
+
+        error_log('[LecContentRepository] createTag failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Renames one study tag. Ownership must already have been checked.
+ *
+ * @param int    $tagId
+ * @param string $name
+ * @return array{success: bool, error?: string}
+ */
+function updateTagById(int $tagId, string $name): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("UPDATE tags SET name = :name WHERE id = :tagId");
+        $stmt->bindValue(':name', $name, PDO::PARAM_STR);
+        $stmt->bindValue(':tagId', $tagId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        if ($e->getCode() === '23000') {
+            return ['success' => false, 'error' => 'DUPLICATE_NAME'];
+        }
+
+        error_log('[LecContentRepository] updateTagById failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Deletes one study tag.
+ *
+ * study_material_tags declares ON DELETE CASCADE against tags, so this also
+ * pulls the tag off every material carrying it - which is the point: a deleted
+ * tag must not linger on the materials table. The materials themselves are
+ * untouched. Ownership must already have been checked by the caller.
+ *
+ * @param int $tagId
+ * @return array{success: bool, error?: string}
+ */
+function deleteTagById(int $tagId): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM tags WHERE id = :tagId");
+        $stmt->bindValue(':tagId', $tagId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        error_log('[LecContentRepository] deleteTagById failed: ' . $e->getMessage());
+        return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
+    }
+}
+
+/**
+ * Replaces the tags ONE lecturer has put on one material.
+ *
+ * The delete is scoped to tags this lecturer created, not to the material as a
+ * whole: another lecturer's tag on the same material is not part of this
+ * selection - it was never shown in the picker - so clearing it would be
+ * silent data loss caused by an edit that never mentioned it.
+ *
+ * Delete-then-insert inside a transaction, for the same reason as
+ * setMaterialPrerequisites(): a half-applied edit leaves a mix of the old and
+ * new selection, which is worse than either.
+ *
+ * @param int   $materialId
+ * @param int   $lecturerUserId
+ * @param int[] $tagIds ownership already checked by the caller
+ * @return array{success: bool, error?: string}
+ */
+function setMaterialTags(int $materialId, int $lecturerUserId, array $tagIds): array
+{
+    $pdo = getDbConnection();
+
+    try {
+        $pdo->beginTransaction();
+
+        $deleteStmt = $pdo->prepare(
+            "DELETE smt
+               FROM study_material_tags smt
+               JOIN tags tg ON tg.id = smt.tag_id
+              WHERE smt.material_id = :materialId AND tg.created_by = :lecturerId"
+        );
+        $deleteStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+        $deleteStmt->bindValue(':lecturerId', $lecturerUserId, PDO::PARAM_INT);
+        $deleteStmt->execute();
+
+        if (count($tagIds) > 0) {
+            $insertStmt = $pdo->prepare(
+                "INSERT INTO study_material_tags (material_id, tag_id)
+                 VALUES (:materialId, :tagId)"
+            );
+
+            foreach ($tagIds as $tagId) {
+                $insertStmt->bindValue(':materialId', $materialId, PDO::PARAM_INT);
+                $insertStmt->bindValue(':tagId', $tagId, PDO::PARAM_INT);
+                $insertStmt->execute();
+            }
+        }
+
+        $pdo->commit();
+
+        return ['success' => true];
+    } catch (PDOException $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log('[LecContentRepository] setMaterialTags failed: ' . $e->getMessage());
         return ['success' => false, 'error' => 'DB_QUERY_FAILED'];
     }
 }

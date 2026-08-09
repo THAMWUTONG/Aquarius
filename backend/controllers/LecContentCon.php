@@ -8,6 +8,7 @@
  * Each handler dispatches on the HTTP verb so one URL owns one resource:
  *   /api/LecQuizzes.php    GET list | POST create | DELETE remove
  *   /api/LecMaterials.php  GET list | POST upload | DELETE remove
+ *   /api/LecTags.php       GET list | POST create/rename | DELETE remove
  *
  * Ownership is never checked here - the logic layer does it, because it is the
  * layer that also knows which id the request is talking about.
@@ -142,6 +143,58 @@ function handleLecturerTopicsRequest(): void
 }
 
 /**
+ * The lecturer's own study tags: /api/LecTags.php
+ *
+ * A tag belongs to the lecturer who created it, so every verb here is scoped to
+ * tags.created_by - the logic layer refuses ids belonging to anyone else.
+ */
+function handleLecturerTagsRequest(): void
+{
+    $lecturerId = requireLecturerSession();
+    if ($lecturerId === null) {
+        return;
+    }
+
+    try {
+        switch (lecRequestMethod()) {
+            case 'GET':
+                sendLecJson(getLecturerTagsData($lecturerId));
+                return;
+
+            case 'POST':
+                $body = lecJsonBody();
+
+                // An id in the body means "rename this tag" rather than
+                // "create one", matching how the quizzes endpoint behaves.
+                $tagId = (int) ($body['id'] ?? 0);
+                $result = $tagId > 0
+                    ? updateLecturerTag($lecturerId, $tagId, $body)
+                    : createLecturerTag($lecturerId, $body);
+
+                sendLecContentResult($result, $tagId > 0 ? 'Study tag renamed.' : 'Study tag created.');
+                return;
+
+            case 'DELETE':
+                $body = lecJsonBody();
+                $tagId = (int) ($body['id'] ?? $_GET['id'] ?? 0);
+                sendLecContentResult(deleteLecturerTag($lecturerId, $tagId), 'Study tag deleted.');
+                return;
+
+            default:
+                sendLecMethodNotAllowed(['GET', 'POST', 'DELETE']);
+                return;
+        }
+    } catch (PDOException $e) {
+        error_log('[LecContentController] tags DB error: ' . $e->getMessage());
+        sendLecApiError("We couldn't fetch your study tags. Please try again later.", 500);
+
+    } catch (Throwable $e) {
+        error_log('[LecContentController] tags unexpected error: ' . $e->getMessage());
+        sendLecApiError('Unknown server error, please try again later.', 500);
+    }
+}
+
+/**
  * Student comments on one quiz: /api/LecQuizFeedback.php?quiz_id=3
  */
 function handleLecturerQuizFeedbackRequest(): void
@@ -197,6 +250,9 @@ function sendLecContentResult(array $result, string $successMessage): void
     }
     if (isset($result['materialId'])) {
         $payload['materialId'] = $result['materialId'];
+    }
+    if (isset($result['tagId'])) {
+        $payload['tagId'] = $result['tagId'];
     }
 
     sendLecJson($payload, $result['status'] ?? 200);

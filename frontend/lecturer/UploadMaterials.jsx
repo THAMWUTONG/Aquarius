@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaTimes, FaCloudUploadAlt, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, uploadMaterial } from '../services/lecturerContentService.jsx';
 import PrerequisitePicker from '../components/PrerequisitePicker.jsx';
+import TagPicker from '../components/TagPicker.jsx';
 
 // Mirrors the server-side allow-list in LecContentLogic.php. Kept in sync so
 // the file picker filters up front instead of letting the upload round-trip
@@ -21,6 +22,9 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
   // Ids of the materials to revise before this one. Optional - an empty list
   // is a perfectly valid material.
   const [prerequisiteIds, setPrerequisiteIds] = useState([]);
+  // Ids of the lecturer's own study tags to label this material with. Also
+  // optional - a material with no tags is valid.
+  const [tagIds, setTagIds] = useState([]);
   const [file, setFile] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -60,6 +64,7 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
     setDescription('');
     setFileType('pdf');
     setPrerequisiteIds([]);
+    setTagIds([]);
     setFile(null);
     setError('');
   };
@@ -88,6 +93,8 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
     // FormData cannot carry an array, so the selection goes over as JSON and
     // the server decodes it. '[]' means "no prerequisites", which is allowed.
     formData.append('prerequisite_ids', JSON.stringify(prerequisiteIds));
+    // Same JSON-in-a-form-field trick as the prerequisites above.
+    formData.append('tag_ids', JSON.stringify(tagIds));
     formData.append('file', file);
 
     try {
@@ -222,6 +229,9 @@ function UploadMaterialModal({ isOpen, onClose, onMaterialUploaded }) {
             selectedIds={prerequisiteIds}
             onChange={setPrerequisiteIds}
           />
+
+          {/* Study tags (optional) */}
+          <TagPicker selectedIds={tagIds} onChange={setTagIds} />
 
           {/* Real File Input */}
           <div>
