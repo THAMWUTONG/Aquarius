@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FaTimes, FaCloudUploadAlt, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, uploadMaterial } from '../services/lecturerContentService.jsx';
 import PrerequisitePicker from '../components/PrerequisitePicker.jsx';

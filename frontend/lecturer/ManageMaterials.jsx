@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
 import { FaPlus, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
@@ -182,7 +182,7 @@ function ManageMaterials() {
   };
 
   return (
-    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] font-sans antialiased">
+    <div className="flex flex-row min-h-screen bg-[#f8fafc] text-[#1e293b] antialiased">
       {/* Sidebar Navigation */}
       <Sidebar />
 
