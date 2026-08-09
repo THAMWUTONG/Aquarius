@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { FaBookmark, FaDownload } from "react-icons/fa"
 
-function StudyMaterialCard({ courseName, title, topicName, description, type, initialIsBookmarked }) {
+function StudyMaterialCard({ id, courseName, title, topicName, description, type, tags = "", prerequisites = "", downloadPath, initialIsBookmarked }) {
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
 
   function toggleBookmark() {
@@ -22,7 +22,12 @@ function StudyMaterialCard({ courseName, title, topicName, description, type, in
         <p className="text-xs text-gray-400">Topic: {topicName}</p>
       </div>
       <p className="text-sm">{description}</p>
-      <p className="text-xs text-sky-500 font-bold">{type}</p>
+      <div className="flex flex-wrap gap-2">
+        {tags && tags.split(",").map((tag, index) => (
+          <p key={index} className="p-1.5 rounded-2xl w-fit text-xs font-bold text-white bg-sky-500">{tag.trim()}</p>
+        ))}
+      </div>
+      <p className="text-xs font-bold uppercase text-sky-500">{type}</p>
     </div>
   )
 }

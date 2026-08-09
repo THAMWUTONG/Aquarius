@@ -22,6 +22,8 @@ function getAllMaterialsForStudent(int $studentId): array
                 sm.description,
                 sm.file_path,
                 sm.file_type,
+                GROUP_CONCAT(prereq.title ORDER BY prereq.title SEPARATOR ' , ') AS prerequisite_title,
+                GROUP_CONCAT(DISTINCT tg.name ORDER BY tg.id SEPARATOR ',') AS tags,
                 t.title AS topic_title,
                 c.id AS course_id,
                 c.title AS course_title,
@@ -29,6 +31,14 @@ function getAllMaterialsForStudent(int $studentId): array
             FROM study_materials sm
             JOIN topics t ON sm.topic_id = t.id
             JOIN courses c ON t.course_id = c.id
+            LEFT JOIN study_material_prerequisites smp ON sm.id = smp.material_id
+            LEFT JOIN study_materials prereq ON smp.prerequisite_id = prereq.id
+            LEFT JOIN study_material_tags smt ON sm.id = smt.material_id
+            LEFT JOIN tags tg ON smt.tag_id = tg.id
+            JOIN enrollment en
+                ON en.course_id = c.id
+                AND en.student_id = :studentId1
+                AND en.status = 'active'
             LEFT JOIN bookmarks b
                 ON b.material_id = sm.id AND b.student_id = :studentId
             WHERE sm.regulation_status = 'approved'

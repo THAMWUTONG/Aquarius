@@ -21,14 +21,19 @@ function PerformanceOverview(){
   if (!user || user.role !== "student") {
     return null;
   }
-  else {
-    return (
-      <div className="flex min-h-screen bg-gray-100">
-        <Sidebar />
-        <main className="flex-1 min-w-0 flex flex-col">
-          <HeaderBar displayedTitle="Performance Overview" userName={ user.name } userRole={ user.role } />
-          <div className="flex-1 p-8 overflow-y-auto space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <main className="flex-1 min-w-0 flex flex-col">
+        <HeaderBar displayedTitle="Performance Overview" userName={ user.name } userRole={ user.role } />
+        <div className="flex-1 p-8 overflow-y-auto space-y-6">
+          {loading && (
+            <div className="rounded-xl bg-white p-6 shadow-sm text-gray-600">Loading performance overview...</div>
+          )}
+
+          {!loading && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4">
                 <div className="flex items-center gap-2">
                   <FaChartBar className="text-sky-500"/>
@@ -46,21 +51,25 @@ function PerformanceOverview(){
                   <h2 className="text-lg font-bold">Score History</h2>
                 </div>
                 <hr className="text-gray-300"></hr>
-                <table className="w-full text-center">
-                  <thead>
-                    <tr>
-                      <th className="pb-1.5 text-sm font-bold">QUIZ TITLE</th>
-                      <th className="pb-1.5 text-sm font-bold">ATTEMPTED AT</th>
-                      <th className="pb-1.5 text-sm font-bold">SCORE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <ScoreHistoryEntry quizName={ "placeholder" } attemptedAt={ "1900-01-01" } score={ "100" }  />
-                    <ScoreHistoryEntry quizName={ "placeholder" } attemptedAt={ "1900-01-01" } score={ "100" }  />
-                  </tbody>
-                </table>
+                <div className="max-h-72 overflow-y-auto">
+                  <table className="w-full text-center">
+                    <thead>
+                      <tr>
+                        <th className="pb-1.5 text-sm font-bold">QUIZ TITLE</th>
+                        <th className="pb-1.5 text-sm font-bold">ATTEMPTED AT</th>
+                        <th className="pb-1.5 text-sm font-bold">SCORE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {scoreHistory.map((entry) => (
+                        <ScoreHistoryEntry key={entry.attemptId} quizName={entry.quizTitle} attemptedAt={entry.attemptedAt} score={entry.score} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-              <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4">
+
+              <div className="p-6 border border-gray-300 rounded-xl bg-white space-y-4 sm:col-span-2">
                 <div className="flex items-center gap-2">
                   <FaChartLine className="text-sky-500"/>
                   <h2 className="text-lg font-bold">Improvement Trends</h2>

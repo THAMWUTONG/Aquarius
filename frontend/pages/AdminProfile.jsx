@@ -33,7 +33,7 @@ function AdminProfile(){
         <main className="flex-1 min-w-0 flex flex-col">
           <HeaderBar displayedTitle="Profile" userName={ user.name } userRole={ user.role }/>
           <div className="flex-1 p-8 overflow-y-auto space-y-6">
-            <div className="p-6 rounded-xl border border-gray-300 shadow-md mx-64 bg-white space-y-4">
+            <div className="p-6 rounded-xl border border-gray-300 shadow-md sm:mx-64 bg-white space-y-4">
               <div className="flex items-center gap-2">
                 <FaUserAlt className="text-sky-500" />
                 <h2 className="text-lg font-bold">Personal Information</h2>
@@ -109,7 +109,7 @@ function ChangePasswordCard({ onSuccess, onError }) {
   }
 
   return (
-    <div className="p-6 rounded-xl border border-gray-300 shadow-md mx-64 bg-white space-y-4">
+    <div className="p-6 rounded-xl border border-gray-300 shadow-md sm:mx-64 bg-white space-y-4">
       <div className="flex items-center gap-2">
         <FaLock className="text-sky-500" />
         <h2 className="text-lg font-bold">Change Password</h2>

@@ -49,10 +49,15 @@ function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col border-r border-gray-300 bg-white w-64">
-      <div className="flex items-center gap-3 p-6">
-        <img className="w-10 h-10" src={logo} alt="Aquarius Logo"/>
-        <h1 className="text-2xl font-bold">Aquarius</h1>
+    // min-h-screen and shrink-0 force the sidebar to stay locked on the left
+    <aside className="fixed inset-0 sm:relative hidden sm:flex sm:flex-col sm:shrink-0 w-64 min-h-screen bg-white border-r border-gray-200" id="sidebar">
+      {/* Logo Section */}
+      <div className="flex items-center gap-3 mt-16 sm:mt-0 p-6">
+        <img className="w-14 h-14" src={logo} alt="Aquarius Logo"/>
+        <div>
+          <h1 className="text-xl font-bold leading-none text-slate-800">Aquarius</h1>
+          <span className="text-[10px] text-sky-500 font-semibold tracking-wider uppercase">Study Platform</span>
+        </div>
       </div>
       <hr className="text-gray-300"/>
       {renderNavigationItems(user)}

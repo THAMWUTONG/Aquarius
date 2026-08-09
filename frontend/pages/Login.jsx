@@ -72,7 +72,7 @@ function Login() {
 
       </div>
       <div className="flex justify-center items-center relative z-10 min-h-screen">
-        <div className="max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
+        <div className="max-w-sm sm:max-w-md flex-1 p-8 rounded-xl shadow-lg bg-white">
           <div className="text-center mb-8">
             <img className="inline w-14 h-14" src={logo} alt="Aquarius Logo"/>
             <h2 className="text-xl font-bold">Welcome to Aquarius</h2>

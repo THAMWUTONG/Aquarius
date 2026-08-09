@@ -9,7 +9,7 @@ function StudentActiveCourses({ activeCoursesArray }) {
       activeCoursesArray.map((course) => (
         <div key={course.id} className="flex justify-between">
           <h3 className="text-sm">{course.title}</h3>
-          <h3 className="text-sm">{course.enrolledAt}</h3> 
+          <h3 className="text-sm text-right">{course.enrolledAt}</h3> 
         </div>
       ))
     )
