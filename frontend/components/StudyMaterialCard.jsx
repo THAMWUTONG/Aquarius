@@ -2,7 +2,7 @@ import { useState } from "react"
 import { FaBookmark, FaDownload } from "react-icons/fa"
 import { toggleBookmark } from "../services/bookmarkService.jsx"
 
-function StudyMaterialCard({ id, courseName, title, topicName, description, type, prerequisites = "", downloadPath, initialIsBookmarked }) {
+function StudyMaterialCard({ id, courseName, title, topicName, description, type, tags = "", prerequisites = "", downloadPath, initialIsBookmarked }) {
   const [isBookmarked, setIsBookmarked] = useState(initialIsBookmarked)
   const [loading, setLoading] = useState(false)
 
@@ -43,6 +43,11 @@ function StudyMaterialCard({ id, courseName, title, topicName, description, type
         {prerequisites && <p className="text-xs text-gray-400">Requires: {prerequisites}</p>}
       </div>
       <p className="text-sm">{description}</p>
+      <div className="flex flex-wrap gap-2">
+        {tags && tags.split(",").map((tag, index) => (
+          <p key={index} className="p-1.5 rounded-2xl w-fit text-xs font-bold text-white bg-sky-500">{tag.trim()}</p>
+        ))}
+      </div>
       <p className="text-xs font-bold uppercase text-sky-500">{type}</p>
     </div>
   )

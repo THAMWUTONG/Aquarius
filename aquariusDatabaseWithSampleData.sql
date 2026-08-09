@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 09, 2026 at 11:10 AM
+-- Generation Time: Aug 09, 2026 at 04:24 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,8 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `aquarius`
 --
-CREATE DATABASE IF NOT EXISTS `aquarius` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
-USE `aquarius`;
 
 -- --------------------------------------------------------
 
@@ -102,8 +100,8 @@ INSERT INTO `bookmarks` (`id`, `student_id`, `material_id`, `bookmarked_at`) VAL
 (9, 3, 9, '2026-07-30 13:25:45'),
 (10, 3, 8, '2026-07-30 13:26:12'),
 (11, 3, 7, '2026-07-30 13:26:40'),
-(12, 3, 6, '2026-08-04 08:00:31'),
-(24, 3, 3, '2026-08-07 12:10:00');
+(24, 3, 3, '2026-08-07 12:10:00'),
+(25, 3, 6, '2026-08-09 13:51:33');
 
 -- --------------------------------------------------------
 
@@ -576,31 +574,6 @@ INSERT INTO `students` (`id`, `student_id`, `programme`, `intake`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `student_availability`
---
-
-CREATE TABLE `student_availability` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `available_date` date NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `student_availability`
---
-
-INSERT INTO `student_availability` (`id`, `student_id`, `available_date`) VALUES
-(1, 2, '2025-10-06'),
-(2, 2, '2025-10-07'),
-(3, 3, '2025-10-08'),
-(4, 4, '2026-02-02'),
-(5, 5, '2026-02-03'),
-(6, 6, '2026-05-10'),
-(7, 2, '2025-10-13');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `study_materials`
 --
 
@@ -734,21 +707,22 @@ INSERT INTO `study_schedule` (`id`, `student_id`, `topic_id`, `scheduled_date`, 
 
 CREATE TABLE `tags` (
   `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL
+  `name` varchar(100) NOT NULL,
+  `created_by` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `tags`
 --
 
-INSERT INTO `tags` (`id`, `name`) VALUES
-(7, 'Advanced'),
-(3, 'Algorithms'),
-(6, 'Beginner'),
-(1, 'Python'),
-(2, 'SQL'),
-(4, 'Statistics'),
-(5, 'Web');
+INSERT INTO `tags` (`id`, `name`, `created_by`) VALUES
+(1, 'Python', 7),
+(2, 'SQL', 8),
+(3, 'Algorithms', 9),
+(4, 'Statistics', 7),
+(5, 'Web', 8),
+(6, 'Beginner', 9),
+(7, 'Advanced', 7);
 
 -- --------------------------------------------------------
 
@@ -804,12 +778,12 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `name`, `email`, `password_hash`, `role`, `last_access`, `created_at`, `updated_at`) VALUES
 (2, 'Alice Nguyen', 'alice@mail.com', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'student', '2026-07-31 07:37:50', '2026-01-10 00:00:00', '2026-07-31 07:37:50'),
-(3, 'Bob Tan', 'bob@mail.com', '$2y$12$.KeR2lDbKj0FMG5IDcSNSOpKtMl1yXYeEKq5LrMyYJkol9et5u0RS', 'student', '2026-08-08 06:31:47', '2026-01-10 00:05:00', '2026-08-08 06:31:47'),
+(3, 'Bob Tan', 'bob@mail.com', '$2y$12$.KeR2lDbKj0FMG5IDcSNSOpKtMl1yXYeEKq5LrMyYJkol9et5u0RS', 'student', '2026-08-09 13:50:14', '2026-01-10 00:05:00', '2026-08-09 13:50:14'),
 (4, 'Clara Lee', 'clara@mail.com', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'student', '2026-07-22 06:00:00', '2026-01-11 01:00:00', '2026-07-31 07:52:37'),
 (5, 'David Kim', 'david@mail.com', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'student', '2026-07-23 08:45:00', '2026-01-11 01:10:00', '2026-07-31 07:52:37'),
 (6, 'Eva Patel', 'eva@mail.com', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'student', '2026-07-24 02:00:00', '2026-01-12 02:00:00', '2026-07-31 07:52:37'),
 (7, 'Dr. James Wong', 'jwong@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'lecturer', '2026-08-06 01:10:00', '2025-07-31 23:00:00', '2026-08-06 01:10:00'),
-(8, 'Prof. Sara Ali', 'sali@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'lecturer', '2026-08-07 18:46:10', '2025-07-31 23:15:00', '2026-08-07 18:46:10'),
+(8, 'Prof. Sara Ali', 'sali@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'lecturer', '2026-08-09 13:42:07', '2025-07-31 23:15:00', '2026-08-09 13:42:07'),
 (9, 'Dr. Raj Mehta', 'rmehta@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'lecturer', '2026-07-23 01:00:00', '2025-08-02 00:00:00', '2026-07-31 07:52:37'),
 (10, 'Admin One', 'admin1@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'admin', '2026-08-07 18:47:09', '2025-06-30 22:00:00', '2026-08-07 18:47:09'),
 (11, 'Admin Two', 'admin2@uni.edu', '$2y$12$qAithEk5E3EM2qwxfmt0feCdd8yCMV54yHacErjxFopNcX8Z30tH6', 'admin', '2026-07-25 10:00:00', '2025-06-30 22:30:00', '2026-07-31 07:52:37');
@@ -924,13 +898,6 @@ ALTER TABLE `students`
   ADD UNIQUE KEY `student_id` (`student_id`);
 
 --
--- Indexes for table `student_availability`
---
-ALTER TABLE `student_availability`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`);
-
---
 -- Indexes for table `study_materials`
 --
 ALTER TABLE `study_materials`
@@ -967,7 +934,8 @@ ALTER TABLE `study_schedule`
 --
 ALTER TABLE `tags`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `name` (`name`);
+  ADD UNIQUE KEY `name` (`name`),
+  ADD KEY `created_by` (`created_by`);
 
 --
 -- Indexes for table `topics`
@@ -997,7 +965,7 @@ ALTER TABLE `audit_logs`
 -- AUTO_INCREMENT for table `bookmarks`
 --
 ALTER TABLE `bookmarks`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
 -- AUTO_INCREMENT for table `courses`
@@ -1052,12 +1020,6 @@ ALTER TABLE `quiz_feedback`
 --
 ALTER TABLE `quiz_questions`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
-
---
--- AUTO_INCREMENT for table `student_availability`
---
-ALTER TABLE `student_availability`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `study_materials`
@@ -1197,12 +1159,6 @@ ALTER TABLE `students`
   ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `student_availability`
---
-ALTER TABLE `student_availability`
-  ADD CONSTRAINT `student_availability_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE;
-
---
 -- Constraints for table `study_materials`
 --
 ALTER TABLE `study_materials`
@@ -1229,6 +1185,12 @@ ALTER TABLE `study_material_tags`
 ALTER TABLE `study_schedule`
   ADD CONSTRAINT `study_schedule_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `study_schedule_ibfk_2` FOREIGN KEY (`topic_id`) REFERENCES `topics` (`id`) ON DELETE CASCADE;
+
+--
+-- Constraints for table `tags`
+--
+ALTER TABLE `tags`
+  ADD CONSTRAINT `tags_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `lecturers` (`id`);
 
 --
 -- Constraints for table `topics`

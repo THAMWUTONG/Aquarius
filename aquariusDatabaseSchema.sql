@@ -128,7 +128,9 @@ CREATE TABLE study_materials (
 -- Stores unique tag labels that can be applied to study materials.
 CREATE TABLE tags (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL UNIQUE
+    name VARCHAR(100) NOT NULL UNIQUE,
+	created_by INT NOT NULL,
+	FOREIGN KEY (created_by) REFERENCES lecturers(id)
 );
 
 -- 10. Study Material Tags (bridge between study_materials and tags)
@@ -266,16 +268,7 @@ CREATE TABLE quiz_feedback (
 -- SECTION 5: SCHEDULING
 -- ============================================================
 
--- 19. Student Available Timeframe
--- Stores when (date) a student is free to study.
-CREATE TABLE student_availability (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    student_id INT NOT NULL,
-    available_date DATE NOT NULL,
-    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
-);
-
--- 20. Study Schedule
+-- 19. Study Schedule
 -- Stores the AI-generated study sessions for each student.
 CREATE TABLE study_schedule (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -287,7 +280,7 @@ CREATE TABLE study_schedule (
     FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
--- 21. Important Events
+-- 20. Important Events
 -- Stores calendar events marked by the student
 -- (exams, assignment deadlines, personal events).
 CREATE TABLE important_events (
@@ -305,7 +298,7 @@ CREATE TABLE important_events (
 -- SECTION 6: PLATFORM MANAGEMENT
 -- ============================================================
 
--- 22. Audit Logs
+-- 21. Audit Logs
 -- Append-only record of significant actions performed on the platform by admin.
 CREATE TABLE audit_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,
