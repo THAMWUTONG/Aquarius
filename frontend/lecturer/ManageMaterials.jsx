@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import HeaderBar from '../components/HeaderBar.jsx';
-import { FaPlus, FaTrashAlt, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
+import { FaPlus, FaTrashAlt, FaTags, FaExclamationTriangle, FaExclamationCircle } from 'react-icons/fa';
 import EditMaterialButton from '../components/EditMaterialButton.jsx';
 import StatusBadge from '../components/StatusBadge.jsx';
 import UploadMaterialModal from './UploadMaterials.jsx';
 import EditMaterialModal from './EditMaterialModal.jsx';
+import ManageTagsModal from './ManageTagsModal.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getLecturerMaterials } from '../services/getLecturerMaterials.jsx';
 import { deleteMaterial } from '../services/lecturerContentService.jsx';
@@ -14,6 +15,7 @@ import { deleteMaterial } from '../services/lecturerContentService.jsx';
 // (Materials -> Topics -> Courses, and Materials -> prerequisite Materials).
 // `prerequisites` holds the materials a student should revise first, so the
 // entries point at other rows in this same list.
+// `tags` holds the lecturer's own study tags on each material, {id, name}.
 const initialMaterials = [
   {
     id: 1,
@@ -24,6 +26,7 @@ const initialMaterials = [
     fileName: 'python_vars.pdf',
     fileHref: '/materials/cs101/python_vars.pdf',
     prerequisites: [],
+    tags: [{ id: 1, name: 'Python' }, { id: 6, name: 'Beginner' }],
     regulationStatus: 'approved',
   },
   {
@@ -35,6 +38,7 @@ const initialMaterials = [
     fileName: 'control_flow.mp4',
     fileHref: '/materials/cs101/control_flow.mp4',
     prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
+    tags: [{ id: 1, name: 'Python' }],
     regulationStatus: 'approved',
   },
   {
@@ -46,6 +50,7 @@ const initialMaterials = [
     fileName: 'functions_ref.pdf',
     fileHref: '/materials/cs101/functions_ref.pdf',
     prerequisites: [{ id: 2, title: 'Control Flow Video' }],
+    tags: [{ id: 1, name: 'Python' }],
     regulationStatus: 'approved',
   },
   {
@@ -57,6 +62,7 @@ const initialMaterials = [
     fileName: 'linked_lists.docx',
     fileHref: '/materials/cs201/linked_lists.docx',
     prerequisites: [{ id: 1, title: 'Python Variables Slides' }],
+    tags: [{ id: 3, name: 'Algorithms' }],
     regulationStatus: 'approved',
   },
   {
@@ -68,6 +74,7 @@ const initialMaterials = [
     fileName: 'sorting_algo.mp4',
     fileHref: '/materials/cs201/sorting_algo.mp4',
     prerequisites: [{ id: 4, title: 'Linked Lists Document' }],
+    tags: [{ id: 3, name: 'Algorithms' }, { id: 7, name: 'Advanced' }],
     regulationStatus: 'pending',
   },
   {
@@ -79,6 +86,7 @@ const initialMaterials = [
     fileName: 'er_diagram.pdf',
     fileHref: '/materials/db301/er_diagram.pdf',
     prerequisites: [],
+    tags: [{ id: 2, name: 'SQL' }],
     regulationStatus: 'approved',
   },
   {
@@ -90,6 +98,7 @@ const initialMaterials = [
     fileName: 'sql_exercises.pdf',
     fileHref: '/materials/db301/sql_exercises.pdf',
     prerequisites: [{ id: 6, title: 'ER Diagram Tutorial' }],
+    tags: [{ id: 2, name: 'SQL' }],
     regulationStatus: 'approved',
   },
 ];
@@ -99,6 +108,7 @@ function ManageMaterials() {
   const [materials, setMaterials] = useState(initialMaterials);
   const [isFallback, setIsFallback] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState(null);
   const [actionError, setActionError] = useState('');
 
@@ -129,6 +139,10 @@ function ManageMaterials() {
           // [{ id, title }] of the materials to revise first. Defaulted to an
           // empty array so the table can map over it without a null check.
           prerequisites: item.prerequisites ?? [],
+          // [{ id, name }] of the lecturer's own study tags on this material,
+          // defaulted the same way. The edit modal reads the ids off it to
+          // pre-tick the current selection.
+          tags: item.tags ?? [],
           regulationStatus: item.regulationStatus,
         }))
       );
@@ -202,13 +216,26 @@ function ManageMaterials() {
               </p>
             </div>
 
-            <button
-              onClick={handleUploadNew}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors self-start sm:self-auto cursor-pointer"
-            >
-              <FaPlus className="text-xs" />
-              <span>Upload New Material</span>
-            </button>
+            <div className="flex flex-col sm:flex-row gap-3 self-start sm:self-auto">
+              {/* Tags are managed on their own, not inside an upload: the same
+                  tag is reused across many materials, so it needs a home that
+                  does not require uploading a file to reach. */}
+              <button
+                onClick={() => setIsTagsModalOpen(true)}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 shadow-sm transition-colors cursor-pointer"
+              >
+                <FaTags className="text-xs text-teal-500" />
+                <span>Manage Study Tags</span>
+              </button>
+
+              <button
+                onClick={handleUploadNew}
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                <FaPlus className="text-xs" />
+                <span>Upload New Material</span>
+              </button>
+            </div>
           </div>
 
           {/* Sample-data warning: only visible when the API could not be reached */}
@@ -242,6 +269,7 @@ function ManageMaterials() {
                       <th className="py-4 px-6">Course</th>
                       <th className="py-4 px-6">Topic</th>
                       <th className="py-4 px-6 text-center">Type</th>
+                      <th className="py-4 px-6 text-center">Study Tag</th>
                       <th className="py-4 px-6 text-center">Prerequisites</th>
                       <th className="py-4 px-6 text-center">Status</th>
                       <th className="py-4 px-6 text-right">Actions</th>
@@ -270,6 +298,28 @@ function ManageMaterials() {
                           <span className="inline-block px-2 py-0.5 text-[10px] font-bold tracking-wider rounded text-slate-500 bg-slate-100/80 border border-slate-200/60 uppercase">
                             {item.type}
                           </span>
+                        </td>
+
+                        {/* Study Tags: this lecturer's own labels on the
+                            material. Managed from the Manage Study Tags button
+                            and picked per material in the upload/edit modals. */}
+                        <td className="py-4 px-6 text-center">
+                          {item.tags.length > 0 ? (
+                            <div className="flex flex-wrap justify-center gap-1 max-w-[220px] mx-auto">
+                              {item.tags.map((tag) => (
+                                <span
+                                  key={tag.id}
+                                  title={tag.name}
+                                  className="inline-block max-w-[200px] truncate px-2.5 py-0.5 rounded-full text-xs font-medium text-teal-700 bg-teal-50 border border-teal-100"
+                                >
+                                  {tag.name}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            // Tags are optional, so no tag is a normal state.
+                            <span className="text-slate-300 font-medium">—</span>
+                          )}
                         </td>
 
                         {/* Prerequisites: the study materials to revise first */}
@@ -340,6 +390,15 @@ function ManageMaterials() {
         onClose={() => setEditingMaterial(null)}
         onMaterialUpdated={fetchMaterials}
       />
+
+      {/* Study tag management. Refetches the table on every write, because a
+          renamed or deleted tag changes what the Study Tag column shows. */}
+      {isTagsModalOpen && (
+        <ManageTagsModal
+          onClose={() => setIsTagsModalOpen(false)}
+          onTagsChanged={fetchMaterials}
+        />
+      )}
     </div>
   );
 }

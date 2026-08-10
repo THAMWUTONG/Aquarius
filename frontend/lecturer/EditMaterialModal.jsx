@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaExclamationCircle } from 'react-icons/fa';
 import { getLecturerTopics, updateMaterial } from '../services/lecturerContentService.jsx';
+import TagPicker from '../components/TagPicker.jsx';
 
 /**
- * Edits a material's title, description and topic.
+ * Edits a material's title, description, topic and study tags.
  *
  * The attached file is not replaceable here - swapping the file under an
  * existing row would silently change what students already downloaded. To
@@ -13,6 +14,9 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [topicId, setTopicId] = useState('');
+  // Pre-ticked from the tags the material already carries, so saving keeps
+  // them; adding or unticking one is what adds or removes a tag.
+  const [tagIds, setTagIds] = useState([]);
 
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +27,7 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
 
     setTitle(material.title ?? '');
     setDescription(material.description ?? '');
+    setTagIds((material.tags ?? []).map((tag) => tag.id));
     setError('');
 
     async function loadTopics() {
@@ -53,6 +58,10 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
         title,
         description,
         topic_id: parseInt(topicId, 10),
+        // Always sent, including as '[]': the server leaves tags alone when the
+        // field is missing, so an empty string is how "remove the last tag"
+        // reaches it.
+        tag_ids: JSON.stringify(tagIds),
       });
 
       if (onMaterialUpdated) onMaterialUpdated();
@@ -142,6 +151,9 @@ function EditMaterialModal({ material, onClose, onMaterialUpdated }) {
               )}
             </select>
           </div>
+
+          {/* Study tags: tick to add, untick to remove */}
+          <TagPicker selectedIds={tagIds} onChange={setTagIds} />
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button

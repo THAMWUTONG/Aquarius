@@ -31,6 +31,46 @@ export async function getLecturerTopics() {
   return readJson(await fetch('/api/LecTopics.php'));
 }
 
+/**
+ * The lecturer's OWN study tags. A lecturer never sees a colleague's tags, so
+ * this is also exactly what the tag pickers are allowed to offer.
+ */
+export async function getLecturerTags() {
+  return readJson(await fetch('/api/LecTags.php'));
+}
+
+export async function createTag(name) {
+  return readJson(
+    await fetch('/api/LecTags.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    })
+  );
+}
+
+/** Passing an `id` turns the same endpoint into a rename. */
+export async function updateTag(id, name) {
+  return readJson(
+    await fetch('/api/LecTags.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, name }),
+    })
+  );
+}
+
+/** Also removes the tag from every material carrying it (DB cascade). */
+export async function deleteTag(id) {
+  return readJson(
+    await fetch('/api/LecTags.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+  );
+}
+
 export async function createQuiz(payload) {
   return readJson(
     await fetch('/api/LecQuizzes.php', {

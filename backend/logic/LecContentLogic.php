@@ -54,9 +54,18 @@ function getLecturerMaterialsData(int $lecturerUserId): array
             error_log('[LecContentLogic] prerequisites failed for lecturer ' . $lecturerUserId);
         }
 
+        // Same treatment for the study tags - an unreadable tag column should
+        // not cost the lecturer the whole materials table.
+        $tagResult = getLecturerMaterialTags($lecturerUserId);
+        if (!$tagResult['success']) {
+            $partialErrors[] = 'tags';
+            error_log('[LecContentLogic] material tags failed for lecturer ' . $lecturerUserId);
+        }
+
         $materials = formatLecturerMaterials(
             $result['data'],
-            groupPrerequisitesByMaterial($prerequisiteResult['data'] ?? [])
+            groupPrerequisitesByMaterial($prerequisiteResult['data'] ?? []),
+            groupTagsByMaterial($tagResult['data'] ?? [])
         );
     }
 
@@ -374,18 +383,18 @@ function lecAllowedUploadExtensions(): array
 }
 
 /**
- * Reads the submitted prerequisite selection into a clean list of ids.
+ * Reads a submitted multi-select into a clean list of ids.
  *
  * The modals post multipart/form-data, where an array cannot be sent as-is, so
- * the selection arrives as a JSON array string ('[3,7]'). A plain comma list
- * and a real PHP array are accepted too, so the endpoint stays usable outside
- * the modal. Blank input means "no prerequisites", which is allowed - they are
- * optional.
+ * a selection arrives as a JSON array string ('[3,7]'). A plain comma list and
+ * a real PHP array are accepted too, so the endpoint stays usable outside the
+ * modal. Blank input means "nothing selected", which every caller here treats
+ * as allowed - both prerequisites and tags are optional.
  *
  * @param mixed $raw
  * @return int[] unique, positive ids
  */
-function normalisePrerequisiteIds($raw): array
+function normaliseIdList($raw): array
 {
     if (is_array($raw)) {
         $values = $raw;
@@ -408,6 +417,238 @@ function normalisePrerequisiteIds($raw): array
     }
 
     return array_values(array_unique($ids));
+}
+
+/**
+ * The prerequisite selection, as a list of study material ids.
+ *
+ * @param mixed $raw
+ * @return int[]
+ */
+function normalisePrerequisiteIds($raw): array
+{
+    return normaliseIdList($raw);
+}
+
+/**
+ * The study tag selection, as a list of tag ids.
+ *
+ * @param mixed $raw
+ * @return int[]
+ */
+function normaliseTagIds($raw): array
+{
+    return normaliseIdList($raw);
+}
+
+/**
+ * Checks a study tag selection before it is written.
+ *
+ * Only ownership needs checking here: unlike prerequisites, a tag cannot point
+ * back at the material, so there is no self-reference or cycle to worry about.
+ *
+ * @param int   $lecturerUserId
+ * @param int[] $tagIds
+ * @return array{success: bool, status?: int, message?: string}
+ */
+function validateTagIds(int $lecturerUserId, array $tagIds): array
+{
+    if (count($tagIds) === 0) {
+        return ['success' => true];
+    }
+
+    // 403 rather than 404, for the same reason as the prerequisite check: the
+    // tag exists, it just belongs to another lecturer.
+    if (countOwnedTags($lecturerUserId, $tagIds) !== count($tagIds)) {
+        return [
+            'success' => false,
+            'status' => 403,
+            'message' => 'One of the selected study tags is not one of your tags.',
+        ];
+    }
+
+    return ['success' => true];
+}
+
+/** Longest tag name the tags.name column accepts. */
+const LEC_MAX_TAG_NAME_LENGTH = 100;
+
+/**
+ * The lecturer's own study tags, for the manage list and the pickers.
+ *
+ * @param int $lecturerUserId
+ * @return array{success: bool, tags: array, partialErrors: array}
+ */
+function getLecturerTagsData(int $lecturerUserId): array
+{
+    $result = getLecturerTags($lecturerUserId);
+    if (!$result['success']) {
+        error_log('[LecContentLogic] tags failed for lecturer ' . $lecturerUserId);
+        return ['success' => true, 'tags' => [], 'partialErrors' => ['tags']];
+    }
+
+    $tags = array_map(function (array $row) {
+        return [
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            // How many materials carry this tag - shown as a warning before a
+            // delete, since deleting removes it from all of them.
+            'materialCount' => (int) $row['material_count'],
+        ];
+    }, $result['data']);
+
+    return ['success' => true, 'tags' => $tags, 'partialErrors' => []];
+}
+
+/**
+ * Validates a submitted tag name.
+ *
+ * @param mixed $raw
+ * @return array{name?: string, error?: string}
+ */
+function normaliseTagName($raw): array
+{
+    // Inner whitespace is collapsed too: 'Data   Science' and 'Data Science'
+    // are the same tag to a reader, but two different rows to a UNIQUE index.
+    $name = trim(preg_replace('/\s+/u', ' ', (string) $raw));
+
+    if ($name === '') {
+        return ['error' => 'A tag name is required.'];
+    }
+    if (mb_strlen($name) > LEC_MAX_TAG_NAME_LENGTH) {
+        return ['error' => 'A tag name cannot be longer than ' . LEC_MAX_TAG_NAME_LENGTH . ' characters.'];
+    }
+
+    return ['name' => $name];
+}
+
+/**
+ * Turns a name clash into a message the lecturer can act on.
+ *
+ * tags.name is UNIQUE across the whole platform, so a rejected name is either
+ * one of their own tags - which they can see and fix - or a colleague's, which
+ * they cannot. Saying which one it is turns a dead end into a decision.
+ *
+ * @param int    $lecturerUserId
+ * @param string $name
+ * @param int    $excludeTagId the tag being renamed, so it does not clash with itself
+ * @return array{success: false, status: int, message: string}
+ */
+function tagNameClashResult(int $lecturerUserId, string $name, int $excludeTagId = 0): array
+{
+    $owner = getTagOwnerByName($name, $excludeTagId);
+
+    if ($owner === $lecturerUserId) {
+        return [
+            'success' => false,
+            'status' => 409,
+            'message' => 'You already have a study tag called "' . $name . '".',
+        ];
+    }
+
+    return [
+        'success' => false,
+        'status' => 409,
+        'message' => 'The tag name "' . $name . '" is already taken by another lecturer. Tag names are unique across the platform, so please choose a different one.',
+    ];
+}
+
+/**
+ * Creates one study tag owned by this lecturer.
+ *
+ * @param int   $lecturerUserId
+ * @param array $payload name
+ * @return array{success: bool, status: int, message?: string, tagId?: int}
+ */
+function createLecturerTag(int $lecturerUserId, array $payload): array
+{
+    $normalised = normaliseTagName($payload['name'] ?? '');
+    if (isset($normalised['error'])) {
+        return ['success' => false, 'status' => 400, 'message' => $normalised['error']];
+    }
+    $name = $normalised['name'];
+
+    // Checked up front so the common case gets the friendlier message, but the
+    // UNIQUE index is still what actually guarantees it - two simultaneous
+    // requests could both pass this check.
+    if (getTagOwnerByName($name) !== null) {
+        return tagNameClashResult($lecturerUserId, $name);
+    }
+
+    $result = createTag($lecturerUserId, $name);
+
+    if (!$result['success']) {
+        if (($result['error'] ?? '') === 'DUPLICATE_NAME') {
+            return tagNameClashResult($lecturerUserId, $name);
+        }
+        return ['success' => false, 'status' => 500, 'message' => "We couldn't save the study tag. Please try again later."];
+    }
+
+    return ['success' => true, 'status' => 201, 'tagId' => $result['tagId']];
+}
+
+/**
+ * Renames a study tag the lecturer created.
+ *
+ * @param int   $lecturerUserId
+ * @param int   $tagId
+ * @param array $payload name
+ * @return array{success: bool, status: int, message?: string}
+ */
+function updateLecturerTag(int $lecturerUserId, int $tagId, array $payload): array
+{
+    if ($tagId <= 0) {
+        return ['success' => false, 'status' => 400, 'message' => 'A valid tag id is required.'];
+    }
+    if (!lecturerOwnsTag($lecturerUserId, $tagId)) {
+        return ['success' => false, 'status' => 403, 'message' => 'That study tag is not one of yours.'];
+    }
+
+    $normalised = normaliseTagName($payload['name'] ?? '');
+    if (isset($normalised['error'])) {
+        return ['success' => false, 'status' => 400, 'message' => $normalised['error']];
+    }
+    $name = $normalised['name'];
+
+    if (getTagOwnerByName($name, $tagId) !== null) {
+        return tagNameClashResult($lecturerUserId, $name, $tagId);
+    }
+
+    $result = updateTagById($tagId, $name);
+
+    if (!$result['success']) {
+        if (($result['error'] ?? '') === 'DUPLICATE_NAME') {
+            return tagNameClashResult($lecturerUserId, $name, $tagId);
+        }
+        return ['success' => false, 'status' => 500, 'message' => "We couldn't rename the study tag. Please try again later."];
+    }
+
+    return ['success' => true, 'status' => 200];
+}
+
+/**
+ * Deletes a study tag the lecturer created, and with it every link to a
+ * material (study_material_tags cascades).
+ *
+ * @param int $lecturerUserId
+ * @param int $tagId
+ * @return array{success: bool, status: int, message?: string}
+ */
+function deleteLecturerTag(int $lecturerUserId, int $tagId): array
+{
+    if ($tagId <= 0) {
+        return ['success' => false, 'status' => 400, 'message' => 'A valid tag id is required.'];
+    }
+    if (!lecturerOwnsTag($lecturerUserId, $tagId)) {
+        return ['success' => false, 'status' => 403, 'message' => 'That study tag is not one of yours.'];
+    }
+
+    $result = deleteTagById($tagId);
+    if (!$result['success']) {
+        return ['success' => false, 'status' => 500, 'message' => "We couldn't delete the study tag. Please try again later."];
+    }
+
+    return ['success' => true, 'status' => 200];
 }
 
 /**
@@ -556,6 +797,12 @@ function createLecturerMaterial(int $lecturerUserId, array $payload, array $file
         return $prerequisiteCheck;
     }
 
+    $tagIds = normaliseTagIds($payload['tag_ids'] ?? '');
+    $tagCheck = validateTagIds($lecturerUserId, $tagIds);
+    if (!$tagCheck['success']) {
+        return $tagCheck;
+    }
+
     $stored = lecStoreUploadedFile($file, $allowed[$fileType]);
     if (isset($stored['error'])) {
         return ['success' => false, 'status' => $stored['status'], 'message' => $stored['error']];
@@ -586,6 +833,17 @@ function createLecturerMaterial(int $lecturerUserId, array $payload, array $file
                 'success' => false,
                 'status' => 500,
                 'message' => 'The material was saved, but its prerequisites could not be linked. Please set them from Edit.',
+            ];
+        }
+    }
+
+    if (count($tagIds) > 0) {
+        $tagged = setMaterialTags($result['materialId'], $lecturerUserId, $tagIds);
+        if (!$tagged['success']) {
+            return [
+                'success' => false,
+                'status' => 500,
+                'message' => 'The material was saved, but its study tags could not be linked. Please set them from Edit.',
             ];
         }
     }
@@ -746,6 +1004,19 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
         }
     }
 
+    // Same rule as the prerequisites: an update that never mentions tag_ids
+    // leaves the existing tags alone. Sending '[]' is how the edit modal
+    // removes the last remaining tag.
+    $editsTags = array_key_exists('tag_ids', $payload);
+    $tagIds = $editsTags ? normaliseTagIds($payload['tag_ids']) : [];
+
+    if ($editsTags) {
+        $tagCheck = validateTagIds($lecturerUserId, $tagIds);
+        if (!$tagCheck['success']) {
+            return $tagCheck;
+        }
+    }
+
     $result = updateMaterialById($materialId, [
         'title' => $title,
         'description' => trim((string) ($payload['description'] ?? '')),
@@ -760,6 +1031,13 @@ function updateLecturerMaterial(int $lecturerUserId, int $materialId, array $pay
         $linked = setMaterialPrerequisites($materialId, $prerequisiteIds);
         if (!$linked['success']) {
             return ['success' => false, 'status' => 500, 'message' => "We couldn't update the prerequisites. Please try again later."];
+        }
+    }
+
+    if ($editsTags) {
+        $tagged = setMaterialTags($materialId, $lecturerUserId, $tagIds);
+        if (!$tagged['success']) {
+            return ['success' => false, 'status' => 500, 'message' => "We couldn't update the study tags. Please try again later."];
         }
     }
 
@@ -811,6 +1089,26 @@ function groupPrerequisitesByMaterial(array $rows): array
 }
 
 /**
+ * Turns the flat tag rows into material_id => [{id, name}, ...].
+ *
+ * @param array $rows from getLecturerMaterialTags()
+ * @return array<int, array<int, array{id: int, name: string}>>
+ */
+function groupTagsByMaterial(array $rows): array
+{
+    $grouped = [];
+
+    foreach ($rows as $row) {
+        $grouped[(int) $row['material_id']][] = [
+            'id' => (int) $row['tag_id'],
+            'name' => $row['tag_name'],
+        ];
+    }
+
+    return $grouped;
+}
+
+/**
  * file_type is stored lowercase ('pdf', 'slides', 'video', 'document') but the
  * table renders a badge in capitals. Uppercasing is presentation, so the raw
  * value is passed through as 'fileType' and the badge text is built in JSX.
@@ -821,13 +1119,20 @@ function groupPrerequisitesByMaterial(array $rows): array
  * Materials with no prerequisites get an empty array, which is a valid state:
  * prerequisites are optional.
  *
+ * tags follows the same shape ({id, name}) and the same rule - optional, so an
+ * empty array is normal - and only ever holds tags this lecturer created.
+ *
  * @param array $rows
  * @param array $prerequisitesByMaterial material_id => [{id, title}, ...]
+ * @param array $tagsByMaterial          material_id => [{id, name}, ...]
  * @return array
  */
-function formatLecturerMaterials(array $rows, array $prerequisitesByMaterial = []): array
-{
-    return array_map(function (array $row) use ($prerequisitesByMaterial) {
+function formatLecturerMaterials(
+    array $rows,
+    array $prerequisitesByMaterial = [],
+    array $tagsByMaterial = []
+): array {
+    return array_map(function (array $row) use ($prerequisitesByMaterial, $tagsByMaterial) {
         $id = (int) $row['id'];
 
         return [
@@ -840,6 +1145,7 @@ function formatLecturerMaterials(array $rows, array $prerequisitesByMaterial = [
             'fileName' => $row['file_name'],
             'filePath' => $row['file_path'],
             'prerequisites' => $prerequisitesByMaterial[$id] ?? [],
+            'tags' => $tagsByMaterial[$id] ?? [],
             'regulationStatus' => $row['regulation_status'],
             'uploadedAt' => !empty($row['uploaded_at'])
                 ? substr($row['uploaded_at'], 0, 10)
