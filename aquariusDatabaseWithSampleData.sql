@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 09, 2026 at 04:24 PM
+-- Generation Time: Aug 09, 2026 at 05:46 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,6 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Database: `aquarius`
 --
+CREATE DATABASE IF NOT EXISTS `aquarius` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `aquarius`;
 
 -- --------------------------------------------------------
 
@@ -650,7 +652,7 @@ CREATE TABLE `study_material_tags` (
 INSERT INTO `study_material_tags` (`id`, `material_id`, `tag_id`) VALUES
 (1, 1, 1),
 (2, 1, 6),
-(3, 2, 1),
+(3, 2, 2),
 (4, 3, 1),
 (5, 4, 3),
 (6, 5, 3),
